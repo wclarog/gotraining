@@ -14,7 +14,11 @@ func (l *IntegerList) insertItemAtFirst(n int) {
 
 func (l *IntegerList) removeFirstItem() {
 	if len(l.list) > 0 {
-		l.list = l.list[1:]
+		if len(l.list) == 1 {
+			l.list = nil
+		} else {
+			l.list = l.list[1:]
+		}
 	}
 }
 
