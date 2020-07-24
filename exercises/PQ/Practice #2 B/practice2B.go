@@ -28,14 +28,14 @@ func bobAnswer(statement string) string {
 	case isNothing(statement):
 		return "Fine. Be that way!."
 
+	case isQuestion(statement) && isAllCapitals(statement):
+		return "Calm down, I know what I'm doing!"
+
 	case isSpecificQuestion(statement):
 		return "Sure."
 
 	case isAllCapitals(statement):
 		return "Whoa, chill out!"
-
-	case isQuestion(statement):
-		return "Calm down, I know what I'm doing!"
 
 	default:
 		return "Whatever."
@@ -45,11 +45,13 @@ func bobAnswer(statement string) string {
 func main() {
 	reader := bufio.NewReader(os.Stdin)
 	statement, _ := reader.ReadString('\n')
+	statement = strings.TrimSpace(statement)
 
 	for ; statement != "Bye";  {
         answer := bobAnswer(statement)
         fmt.Printf("%s\n", answer)
 
 		statement, _ = reader.ReadString('\n')
+		statement = strings.TrimSpace(statement)
 	}
 }
