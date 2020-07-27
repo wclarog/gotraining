@@ -44,11 +44,11 @@ func main() {
 
 	fmt.Print("Enter start year: ")
 	start, _ := reader.ReadString('\n')
-	start = strings.Replace(start, "\n", "", -1)
+	start = strings.TrimSpace(start)
 
 	fmt.Print("Enter end year: ")
 	end, _ := reader.ReadString('\n')
-	end = strings.Replace(end, "\n", "", -1)
+	end = strings.TrimSpace(end)
 
 	startNumber, errStart := strconv.Atoi(start)
 	if errStart != nil {
