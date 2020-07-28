@@ -17,12 +17,10 @@ func leapNumbersGenerator(start int, end int) []int {
 		return []int{}
 	}
 	a := make([]int, 0, (end-start)+1)
-	step := start
-	for step <= end {
+	for step := start; step <= end; step++ {
 		if checkIsLeapYear(step) {
 			a = append(a, step)
 		}
-		step += 1
 	}
 	return a
 }
