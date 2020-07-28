@@ -8,7 +8,7 @@ import (
 func checkArmstrong(number int) bool {
 	sum := 0
 	digits := CountDigits(number)
-	for tmpNumber := number; tmpNumber != 0; tmpNumber /= 10 {
+	for tmpNumber := number; tmpNumber > 0; tmpNumber /= 10 {
 		remainder := tmpNumber % 10
 		sum = sum + int(math.Pow(float64(remainder), float64(digits)))
 	}
