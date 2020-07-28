@@ -57,7 +57,7 @@ func main() {
 
 	endNumber, errEnd := strconv.Atoi(end)
 	if errEnd != nil {
-		fmt.Println("invalid start year", endNumber)
+		fmt.Println("invalid end year", endNumber)
 	}
 
 	if errStart == nil && errEnd == nil {

@@ -17,10 +17,7 @@ func checkArmstrong(number int) bool {
 			break
 		}
 	}
-	if sum == number {
-		return true
-	}
-	return false
+	return sum == number
 }
 
 func CountDigits(number int) int {
