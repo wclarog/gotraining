@@ -16,7 +16,7 @@ func IsArmstrongNumber(number int) bool{
 		sum := 0
 		for i := range numberStr{
 			current := string(numberStr[i])
-			j, _ := strconv.ParseInt(current, 10, 64)
+			j, _ := strconv.ParseInt(current, 10, 32)
 			sum += int(math.Pow(float64(j), float64(pow)))
 		}
 
