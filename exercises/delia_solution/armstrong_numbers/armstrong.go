@@ -8,14 +8,9 @@ import (
 func checkArmstrong(number int) bool {
 	sum := 0
 	digits := CountDigits(number)
-	tmpNumber := number
-	for {
+	for tmpNumber := number; tmpNumber != 0; tmpNumber /= 10 {
 		remainder := tmpNumber % 10
 		sum = sum + int(math.Pow(float64(remainder), float64(digits)))
-		tmpNumber /= 10
-		if tmpNumber == 0 {
-			break
-		}
 	}
 	return sum == number
 }
