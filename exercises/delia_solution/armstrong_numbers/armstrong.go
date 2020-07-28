@@ -34,5 +34,5 @@ func main() {
 	fmt.Printf("Enter number to check if it's an Armstrong number:\n")
 	fmt.Scanf("%d", &number)
 
-	fmt.Println("The number", number, "is an Armstrong number: ", checkArmstrong(number))
+	fmt.Println("The number ", number, "is an Armstrong number: ", checkArmstrong(number))
 }
