@@ -60,8 +60,8 @@ func main() {
 		fmt.Println("invalid start year", endNumber)
 	}
 
-	// if errStart == nil && errEnd == nil {
-	fmt.Println("Leap numbers between ", start, "and ", end, "years are: ")
-	fmt.Println(leapNumbersGenerator(startNumber, endNumber))
-	// }
+	if errStart == nil && errEnd == nil {
+		fmt.Println("Leap numbers between ", start, "and ", end, "years are: ")
+		fmt.Println(leapNumbersGenerator(startNumber, endNumber))
+	}
 }
