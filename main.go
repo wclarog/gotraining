@@ -1,15 +1,15 @@
 package main
 
 import (
-	"./exercises/practice2"
 	"fmt"
+	practice22 "github.com/wclarog/gotraining/exercises/camila/practice2"
 )
 
 func main() {
 	fmt.Println("Leap years")
-	practice2.PrintLeapYears(1984, 2000)
+	practice22.PrintLeapYears(1984, 2000)
 	fmt.Println("The teenager")
-	practice2.TestAnwers()
+	practice22.TestAnwers()
 	fmt.Println("Armstrong number")
-	practice2.TestArmstrongNumber()
+	practice22.TestArmstrongNumber()
 }
