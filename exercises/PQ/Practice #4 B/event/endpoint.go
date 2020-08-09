@@ -19,8 +19,11 @@ func makeMethodEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		events, err := s.NextEvents(ctx)
 
-		// TODO: si hay error no convertir la response
-		return MethodResponse(events), err
+		if err != nil {
+			return "", err
+		}
+
+		return MethodResponse(events), nil
 	}
 }
 

@@ -1,11 +1,12 @@
 package event
 
 import (
+	"bufio"
 	"context"
 	"errors"
-	goCsv "github.com/JensRantil/go-csv"
-	"io"
 	"os"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -15,75 +16,110 @@ type Repository interface {
 
 type repository struct {
 	fileName string
+	events   []DTOEvent
 }
 
 func NewRepository(fileName string) Repository {
+	events, err := readData(fileName)
+	if err != nil {
+		return nil
+	}
+
 	return &repository{
 		fileName: fileName,
+		events:   events,
 	}
 }
 
 func (r repository) NextEvents(_ context.Context) ([]DTOEvent, error) {
+	results := make([]DTOEvent, 0, len(r.events))
+	today := time.Now()
+
+	for _, evt := range r.events {
+		if evt.Date.After(today) {
+			results = append(results, evt)
+		}
+	}
+
+	return results, nil
+}
+
+func readData(fileName string) ([]DTOEvent, error) {
 	var results []DTOEvent
+	var newEvent DTOEvent
+	reField := regexp.MustCompile(`".*?"`)
 
-	csvFile, errOpen := os.Open(r.fileName)
-	defer csvFile.Close()
-	if errOpen != nil {
-		return []DTOEvent{}, errOpen
+	f, err := os.Open(fileName)
+
+	if err != nil {
+		return []DTOEvent{}, err
 	}
 
-	dialect := goCsv.Dialect {
-		Delimiter: ',',
-		Quoting: goCsv.QuoteNonNumeric,
-		DoubleQuote: goCsv.DoDoubleQuote,
-		QuoteChar: '"',
-	}
+	defer f.Close()
 
-	csvReader := goCsv.NewDialectReader(csvFile, dialect)
-	/*
-	csvReader.Comma = ','
-	csvReader.Comment = '#'
-	csvReader.FieldsPerRecord = 3
-	csvReader.LazyQuotes = false
-	*/
+	scanner := bufio.NewScanner(f)
 
-	// First line is header, data discarded.
-	record, err := csvReader.Read()
-	if err == io.EOF {
-		return []DTOEvent{}, errors.New("file does not exist")
-	}
+	for scanner.Scan() {
+		newEvent, err = parseLineData(scanner.Text(), reField)
 
-	for {
-		// Read each record from csv
-		record, err = csvReader.Read()
-		if err == io.EOF {
-			break
-		}
 		if err != nil {
-			return []DTOEvent{}, err
-		}
-
-		newDate, err := time.Parse("2019-12-31", record[2])
-		if err != nil {
-			return []DTOEvent{}, err
-		}
-
-		var newEvent = DTOEvent{
-			Title:       record[0],
-			Description: record[1],
-			Date:        newDate,
+			// Invalid lines are discarded.
+			continue
 		}
 
 		results = append(results, newEvent)
 	}
 
 	return results, nil
+}
+
+func parseLineData(lineText string, reField *regexp.Regexp) (DTOEvent, error) {
+	fields := reField.FindAllString(lineText, -1)
+
+	if len(fields) != 3 {
+		return DTOEvent{}, errors.New("invalid input line")
+	}
+
+	trimFields := Map(fields, cleanField)
+
+	dateField, err := time.Parse("2006-1-2", trimFields[2])
+	if err != nil {
+		return DTOEvent{}, errors.New("invalid date field")
+	}
+
+	var newEvent = DTOEvent{
+		Title:       trimFields[0],
+		Description: trimFields[1],
+		Date:        dateField,
+	}
+
+	return newEvent, nil
+}
+
+func Map(vs []string, f func(string) string) []string {
+	vsm := make([]string, len(vs))
+	for i, v := range vs {
+		vsm[i] = f(v)
+	}
+	return vsm
+}
+
+func cleanField(field string) string {
+	return strings.Trim(field, `"`)
+}
+
 /*
+func dummyData(fileName string) ([]DTOEvent, error) {
 	return []DTOEvent{
+		DTOEvent{
+			Title:       "Title0",
+			Description: "Description0",
+			Date:        time.Date(2020, 9, 2, 0, 0, 0, 0, time.UTC),
+		},
 		DTOEvent{
 			Title:       "Title1",
 			Description: "Description1",
-			Date:        time.Date(2020, 9, 2, 0, 0, 0, 0, time.UTC),
+			Date:        time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC),
 		},
 		DTOEvent{
 			Title:       "Title2",
@@ -96,5 +132,5 @@ func (r repository) NextEvents(_ context.Context) ([]DTOEvent, error) {
 			Date:        time.Date(2020, 12, 25, 0, 0, 0, 0, time.UTC),
 		},
 	}, nil
-*/
 }
+*/
