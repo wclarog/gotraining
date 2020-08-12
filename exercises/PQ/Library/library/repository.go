@@ -9,9 +9,10 @@ import (
 )
 
 type Repository interface {
-	GetMaterial(ctx context.Context, uniqueCode string) (interface{}, error)
+	GetMaterials(ctx context.Context) ([]interface{}, error)
+	GetMaterialByCode(ctx context.Context, uniqueCode string) (interface{}, error)
 	AddMaterial(ctx context.Context, material interface{}) (interface{}, error)
-	UpdateMaterial(ctx context.Context, material interface{}) (interface{}, error)
+	UpdateMaterial(ctx context.Context, uniqueCode string, material interface{}) (interface{}, error)
 	DeleteMaterial(ctx context.Context, uniqueCode string) error
 }
 
@@ -27,38 +28,62 @@ func NewRepository(db *sql.DB) Repository {
 	}
 }
 
-func (r repository) GetMaterial(_ context.Context, uniqueCode string) (interface{}, error) {
+func (r repository) GetMaterials(_ context.Context) ([]interface{}, error) {
+	materials := make([]interface{}, len(r.testData))
+
+	idx := 0
+	for _, material := range r.testData {
+		materials[idx] = material
+		idx++
+	}
+
+	return materials, nil
+}
+
+func (r repository) GetMaterialByCode(_ context.Context, uniqueCode string) (interface{}, error) {
 	material, exists := r.testData[uniqueCode]
 
 	if !exists {
-		return Material{}, errors.New(fmt.Sprintf("material %s not defined in the database", uniqueCode))
+		return nil, errors.New(fmt.Sprintf("material %s not found in the database", uniqueCode))
 	}
 
 	return material, nil
 }
 
 func (r repository) AddMaterial(_ context.Context, material interface{}) (interface{}, error) {
-	materialElement := material.(Material)
+	uniqueCode, err := getUniqueCode(material)
+	if err != nil {
+		return nil, err
+	}
 
-	result, exists := r.testData[materialElement.UniqueCode]
+	_, exists := r.testData[uniqueCode]
 
 	if exists {
-		return Material{}, errors.New(fmt.Sprintf("material %s already defined in the database", materialElement.UniqueCode))
+		return nil, errors.New(fmt.Sprintf("material %s already defined in the database", uniqueCode))
 	}
 
-	return result, nil
+	r.testData[uniqueCode] = material
+
+	return material, nil
 }
 
-func (r repository) UpdateMaterial(_ context.Context, material interface{}) (interface{}, error) {
-	materialElement := material.(Material)
-
-	_, exists := r.testData[materialElement.UniqueCode]
-
-	if !exists {
-		return Material{}, errors.New(fmt.Sprintf("material %s not defined in the database", materialElement.UniqueCode))
+func (r repository) UpdateMaterial(_ context.Context, uniqueCode string, material interface{}) (interface{}, error) {
+	objUniqueCode, err := getUniqueCode(material)
+	if err != nil {
+		return nil, err
 	}
 
-	r.testData[materialElement.UniqueCode] = material
+	if objUniqueCode != uniqueCode {
+		return nil, errors.New(fmt.Sprintf("parameter unique code %s and material unique code %s do not match", uniqueCode, objUniqueCode))
+	}
+
+	_, exists := r.testData[uniqueCode]
+
+	if !exists {
+		return nil, errors.New(fmt.Sprintf("material %s not found in the database", uniqueCode))
+	}
+
+	r.testData[uniqueCode] = material
 
 	return material, nil
 }
@@ -67,12 +92,28 @@ func (r repository) DeleteMaterial(_ context.Context, uniqueCode string) error {
 	_, exists := r.testData[uniqueCode]
 
 	if !exists {
-		return errors.New(fmt.Sprintf("material %s not defined in the database", uniqueCode))
+		return errors.New(fmt.Sprintf("material %s not found in the database", uniqueCode))
 	}
 
 	delete(r.testData, uniqueCode)
 
 	return nil
+}
+
+func getUniqueCode(material interface{}) (string, error) {
+	switch v := material.(type) {
+	case DTOBook:
+		return v.UniqueCode, nil
+
+	case DTONewspaper:
+		return v.UniqueCode, nil
+
+	case DTOMagazine:
+		return v.UniqueCode, nil
+
+	default:
+		return "", errors.New("invalid material object in getUniqueCode")
+	}
 }
 
 func initTestData() map[string]interface{} {
