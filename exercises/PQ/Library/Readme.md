@@ -4,7 +4,7 @@ This repository contains a template for starting go kit app
 
 ### Running the REST API server
 
-The web server runs on port `8080` by default. It can be changed under the `config` folder. There is a configuration 
+The web server runs on port `8082` by default. It can be changed under the `config` folder. There is a configuration 
 file per environment. The property that needs to be changed is `HttpPort`.
 
 To are two ways of running the server locally, **with** and **without** *Docker*.

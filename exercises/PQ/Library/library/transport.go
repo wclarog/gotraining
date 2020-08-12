@@ -15,9 +15,16 @@ func NewHandler(_ context.Context, options []httptransport.ServerOption, endpoin
 
 	options = append(options, errorEncoder)
 
-	r.Methods(http.MethodGet).Path("/library").Handler(httptransport.NewServer(
-		endpoints.Method,
-		decodeLibraryRequest,
+	r.Methods(http.MethodGet).Path("/library/materials/{code}").Handler(httptransport.NewServer(
+		endpoints.GetMaterialEndpoint,
+		decodeGetMaterialRequest,
+		encodeResponse,
+		options...,
+	))
+
+	r.Methods(http.MethodPost).Path("/library/material").Handler(httptransport.NewServer(
+		endpoints.AddMaterialEndpoint,
+		decodeAddMaterialRequest,
 		encodeResponse,
 		options...,
 	))
