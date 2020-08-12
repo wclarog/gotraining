@@ -105,10 +105,10 @@ func getUniqueCode(material interface{}) (string, error) {
 	case DTOBook:
 		return v.UniqueCode, nil
 
-	case DTONewspaper:
+	case DTOMagazine:
 		return v.UniqueCode, nil
 
-	case DTOMagazine:
+	case DTONewspaper:
 		return v.UniqueCode, nil
 
 	default:

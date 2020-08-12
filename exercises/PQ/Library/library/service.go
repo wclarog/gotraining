@@ -40,7 +40,7 @@ func (s service) GetMaterialByCode(ctx context.Context, uniqueCode string) (mate
 	dtoResult, err := s.repository.GetMaterialByCode(ctx, uniqueCode)
 
 	if err != nil {
-		return Material{}, err
+		return nil, err
 	}
 
 	return s.dtoToMaterial(dtoResult)
@@ -51,7 +51,7 @@ func (s service) AddMaterial(ctx context.Context, material interface{}) (newMate
 
 	dtoMaterial, err := s.materialToDto(material)
 	if err != nil {
-		return Material{}, err
+		return nil, err
 	}
 
 	result, err = s.repository.AddMaterial(ctx, dtoMaterial)
@@ -100,17 +100,6 @@ func (s service) materialToDto(m interface{}) (material interface{}, err error) 
 			Genre:      v.Genre,
 		}, nil
 
-	case Newspaper:
-		return DTONewspaper{
-			DTOMaterial: DTOMaterial{
-				UniqueCode:     v.UniqueCode,
-				Name:           v.Name,
-				DateOfEmission: v.DateOfEmission,
-				NumberOfPages:  v.NumberOfPages,
-			},
-			Url: v.Url,
-		}, nil
-
 	case Magazine:
 		return DTOMagazine{
 			DTOMaterial: DTOMaterial{
@@ -123,8 +112,19 @@ func (s service) materialToDto(m interface{}) (material interface{}, err error) 
 			Url:      v.Url,
 		}, nil
 
+	case Newspaper:
+		return DTONewspaper{
+			DTOMaterial: DTOMaterial{
+				UniqueCode:     v.UniqueCode,
+				Name:           v.Name,
+				DateOfEmission: v.DateOfEmission,
+				NumberOfPages:  v.NumberOfPages,
+			},
+			Url: v.Url,
+		}, nil
+
 	default:
-		return Material{}, errors.New("invalid material object in materialToDto")
+		return nil, errors.New("invalid material object in materialToDto")
 	}
 }
 
@@ -157,17 +157,6 @@ func (s service) dtoToMaterial(m interface{}) (material interface{}, err error) 
 			Genre:      v.Genre,
 		}, nil
 
-	case DTONewspaper:
-		return Newspaper{
-			Material: Material{
-				UniqueCode:     v.UniqueCode,
-				Name:           v.Name,
-				DateOfEmission: v.DateOfEmission,
-				NumberOfPages:  v.NumberOfPages,
-			},
-			Url: v.Url,
-		}, nil
-
 	case DTOMagazine:
 		return Magazine{
 			Material: Material{
@@ -180,8 +169,19 @@ func (s service) dtoToMaterial(m interface{}) (material interface{}, err error) 
 			Url:      v.Url,
 		}, nil
 
+	case DTONewspaper:
+		return Newspaper{
+			Material: Material{
+				UniqueCode:     v.UniqueCode,
+				Name:           v.Name,
+				DateOfEmission: v.DateOfEmission,
+				NumberOfPages:  v.NumberOfPages,
+			},
+			Url: v.Url,
+		}, nil
+
 	default:
-		return Material{}, errors.New("invalid material object in dtoToMaterial")
+		return nil, errors.New("invalid material object in dtoToMaterial")
 	}
 }
 

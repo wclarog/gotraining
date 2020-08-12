@@ -71,52 +71,63 @@ func makeDeleteMaterialEndpoint(s Service) endpoint.Endpoint {
 type getMaterialsRequest struct {
 }
 
+/*
 type getMaterialsResponse struct {
 	Materials []interface{} `json:"materials,omitempty"`
 	Err       error         `json:"err,omitempty"`
 }
 
 func (r getMaterialsResponse) error() error { return r.Err }
+*/
 
 type getMaterialByCodeRequest struct {
 	Code string
 }
+
+/*
 type getMaterialByCodeResponse struct {
 	Material interface{} `json:"material,omitempty"`
 	Err      error       `json:"err,omitempty"`
 }
 
 func (r getMaterialByCodeResponse) error() error { return r.Err }
+*/
 
 type addMaterialRequest struct {
 	Material interface{}
 }
 
+/*
 type addMaterialResponse struct {
 	Material interface{} `json:"material,omitempty"`
 	Err      error       `json:"err,omitempty"`
 }
 
 func (r addMaterialResponse) error() error { return r.Err }
+*/
 
 type updateMaterialRequest struct {
 	Code     string
 	Material interface{}
 }
 
+/*
 type updateMaterialResponse struct {
 	Material interface{} `json:"material,omitempty"`
 	Err      error       `json:"err,omitempty"`
 }
 
 func (r updateMaterialResponse) error() error { return r.Err }
+*/
 
 type deleteMaterialRequest struct {
 	Code string
 }
 
+/*
 type deleteMaterialResponse struct {
 	Err error `json:"err,omitempty"`
 }
 
 func (r deleteMaterialResponse) error() error { return r.Err }
+*/
