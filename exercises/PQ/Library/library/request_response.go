@@ -42,37 +42,12 @@ func encodeErrorResponse(_ context.Context, err error, rw http.ResponseWriter) {
 	_ = json.NewEncoder(rw).Encode(err.Error())
 }
 
+// Request decoders
+
 func decodeAddMaterialRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	var req addMaterialRequest
-	var mat Material
-	var bodyData []byte
 
-	bodyData, err = ioutil.ReadAll(r.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	err = json.NewDecoder(bytes.NewReader(bodyData)).Decode(&mat)
-	if err != nil {
-		return nil, err
-	}
-
-	req.MaterialType = mat.MaterialType
-
-	switch req.MaterialType {
-	case BookType:
-		err = json.NewDecoder(bytes.NewReader(bodyData)).Decode(&req.Book)
-
-	case MagazineType:
-		err = json.NewDecoder(bytes.NewReader(bodyData)).Decode(&req.Magazine)
-
-	case NewspaperType:
-		err = json.NewDecoder(bytes.NewReader(bodyData)).Decode(&req.Newspaper)
-
-	default:
-		return nil, errors.New("invalid material object in decodeAddMaterialRequest")
-	}
-
+	req.materialBodyRequest, err = decodeMaterialBodyRequest(r)
 	if err != nil {
 		return nil, err
 	}
@@ -82,42 +57,13 @@ func decodeAddMaterialRequest(_ context.Context, r *http.Request) (request inter
 
 func decodeUpdateMaterialRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	var req updateMaterialRequest
-	var mat Material
-	var ok bool
-	var bodyData []byte
 
-	vars := mux.Vars(r)
-	req.Code, ok = vars["code"]
-	if !ok {
-		return nil, ErrBadRouting
-	}
-
-	bodyData, err = ioutil.ReadAll(r.Body)
+	req.materialBodyRequest, err = decodeMaterialBodyRequest(r)
 	if err != nil {
 		return nil, err
 	}
 
-	err = json.NewDecoder(bytes.NewReader(bodyData)).Decode(&mat)
-	if err != nil {
-		return nil, err
-	}
-
-	req.MaterialType = mat.MaterialType
-
-	switch req.MaterialType {
-	case BookType:
-		err = json.NewDecoder(bytes.NewReader(bodyData)).Decode(&req.Book)
-
-	case MagazineType:
-		err = json.NewDecoder(bytes.NewReader(bodyData)).Decode(&req.Magazine)
-
-	case NewspaperType:
-		err = json.NewDecoder(bytes.NewReader(bodyData)).Decode(&req.Newspaper)
-
-	default:
-		return nil, errors.New("invalid material object in decodeAddMaterialRequest")
-	}
-
+	req.codeParamRequest, err = decodeCodeParamRequest(r)
 	if err != nil {
 		return nil, err
 	}
@@ -126,12 +72,14 @@ func decodeUpdateMaterialRequest(_ context.Context, r *http.Request) (request in
 }
 
 func decodeDeleteMaterialRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	vars := mux.Vars(r)
-	code, ok := vars["code"]
-	if !ok {
-		return nil, ErrBadRouting
+	var req deleteMaterialRequest
+
+	req.codeParamRequest, err = decodeCodeParamRequest(r)
+	if err != nil {
+		return nil, err
 	}
-	return deleteMaterialRequest{Code: code}, nil
+
+	return req, nil
 }
 
 func decodeGetAllRequest(_ context.Context, _ *http.Request) (request interface{}, err error) {
@@ -139,10 +87,63 @@ func decodeGetAllRequest(_ context.Context, _ *http.Request) (request interface{
 }
 
 func decodeGetByCodeRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	vars := mux.Vars(r)
-	code, ok := vars["code"]
-	if !ok {
-		return nil, ErrBadRouting
+	var req getByCodeRequest
+
+	req.codeParamRequest, err = decodeCodeParamRequest(r)
+	if err != nil {
+		return nil, err
 	}
-	return getByCodeRequest{Code: code}, nil
+
+	return req, nil
+}
+
+// Generic decoders
+
+func decodeCodeParamRequest(r *http.Request) (codeParam codeParamRequest, err error) {
+	var ok bool
+
+	vars := mux.Vars(r)
+	codeParam.Code, ok = vars["code"]
+	if !ok {
+		return codeParamRequest{}, ErrBadRouting
+	}
+
+	return codeParam, nil
+}
+
+func decodeMaterialBodyRequest(r *http.Request) (materialBody materialBodyRequest, err error) {
+	var mat Material
+	var bodyData []byte
+
+	bodyData, err = ioutil.ReadAll(r.Body)
+	if err != nil {
+		return materialBodyRequest{}, err
+	}
+
+	err = json.NewDecoder(bytes.NewReader(bodyData)).Decode(&mat)
+	if err != nil {
+		return materialBodyRequest{}, err
+	}
+
+	materialBody.MaterialType = mat.MaterialType
+
+	switch materialBody.MaterialType {
+	case BookType:
+		err = json.NewDecoder(bytes.NewReader(bodyData)).Decode(&materialBody.Book)
+
+	case MagazineType:
+		err = json.NewDecoder(bytes.NewReader(bodyData)).Decode(&materialBody.Magazine)
+
+	case NewspaperType:
+		err = json.NewDecoder(bytes.NewReader(bodyData)).Decode(&materialBody.Newspaper)
+
+	default:
+		return materialBodyRequest{}, errors.New("invalid material object in decodeAddMaterialRequest")
+	}
+
+	if err != nil {
+		return materialBodyRequest{}, err
+	}
+
+	return materialBody, nil
 }

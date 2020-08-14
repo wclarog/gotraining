@@ -99,7 +99,7 @@ func (r repository) GetBooks(_ context.Context) ([]DTOBook, error) {
 		}
 	}
 
-	return books, nil
+	return books[:idx], nil
 }
 
 func (r repository) GetBookByCode(_ context.Context, uniqueCode string) (DTOBook, error) {
@@ -176,7 +176,7 @@ func (r repository) GetNewspapers(_ context.Context) ([]DTONewspaper, error) {
 		}
 	}
 
-	return newspapers, nil
+	return newspapers[:idx], nil
 }
 
 func (r repository) GetNewspaperByCode(_ context.Context, uniqueCode string) (DTONewspaper, error) {
@@ -238,7 +238,7 @@ func (r repository) UpdateNewspaper(_ context.Context, uniqueCode string, newspa
 // Magazines
 
 func (r repository) GetMagazines(_ context.Context) ([]DTOMagazine, error) {
-	books := make([]DTOMagazine, len(r.testData))
+	magazines := make([]DTOMagazine, len(r.testData))
 
 	idx := 0
 	for _, material := range r.testData {
@@ -248,12 +248,12 @@ func (r repository) GetMagazines(_ context.Context) ([]DTOMagazine, error) {
 		}
 
 		if resMaterial.MaterialType == MagazineType {
-			books[idx] = material.(DTOMagazine)
+			magazines[idx] = material.(DTOMagazine)
 			idx++
 		}
 	}
 
-	return books, nil
+	return magazines[:idx], nil
 }
 
 func (r repository) GetMagazineByCode(_ context.Context, uniqueCode string) (DTOMagazine, error) {
@@ -329,6 +329,8 @@ func (r repository) getMaterial(material MaterialTyped) (DTOMaterial, error) {
 		return DTOMaterial{}, errors.New(fmt.Sprintf("unsupported material type %d in GetMaterials", material.GetMaterialType()))
 	}
 }
+
+// Create fake test data
 
 func initTestData() map[string]MaterialTyped {
 	var idx int

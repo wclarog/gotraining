@@ -139,28 +139,33 @@ func makeGetNewspaperByCodeEndpoint(s Service) endpoint.Endpoint {
 
 // Request types
 
-type addMaterialRequest struct {
+type materialBodyRequest struct {
 	MaterialType MaterialType
 	Book         Book
 	Magazine     Magazine
 	Newspaper    Newspaper
+}
+
+type codeParamRequest struct {
+	Code string
+}
+
+type addMaterialRequest struct {
+	materialBodyRequest
 }
 
 type updateMaterialRequest struct {
-	Code         string
-	MaterialType MaterialType
-	Book         Book
-	Magazine     Magazine
-	Newspaper    Newspaper
+	codeParamRequest
+	materialBodyRequest
 }
 
 type deleteMaterialRequest struct {
-	Code string
+	codeParamRequest
 }
 
 type getAllRequest struct {
 }
 
 type getByCodeRequest struct {
-	Code string
+	codeParamRequest
 }
