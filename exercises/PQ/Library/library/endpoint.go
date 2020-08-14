@@ -2,60 +2,77 @@ package library
 
 import (
 	"context"
+	"errors"
 	"github.com/go-kit/kit/endpoint"
 )
 
 type Endpoints struct {
-	GetMaterialsEndpoint      endpoint.Endpoint
-	GetMaterialByCodeEndpoint endpoint.Endpoint
-	AddMaterialEndpoint       endpoint.Endpoint
-	UpdateMaterialEndpoint    endpoint.Endpoint
-	DeleteMaterialEndpoint    endpoint.Endpoint
+	AddMaterialEndpoint        endpoint.Endpoint
+	UpdateMaterialEndpoint     endpoint.Endpoint
+	DeleteMaterialEndpoint     endpoint.Endpoint
+	GetMaterialsEndpoint       endpoint.Endpoint
+	GetMaterialByCodeEndpoint  endpoint.Endpoint
+	GetBooksEndpoint           endpoint.Endpoint
+	GetBookByCodeEndpoint      endpoint.Endpoint
+	GetMagazinesEndpoint       endpoint.Endpoint
+	GetMagazineByCodeEndpoint  endpoint.Endpoint
+	GetNewspapersEndpoint      endpoint.Endpoint
+	GetNewspaperByCodeEndpoint endpoint.Endpoint
 }
 
 func MakeEndpoints(s Service) Endpoints {
 	return Endpoints{
-		GetMaterialsEndpoint:      makeGetMaterialsEndpoint(s),
-		GetMaterialByCodeEndpoint: makeGetMaterialByCodeEndpoint(s),
-		AddMaterialEndpoint:       makeAddMaterialEndpoint(s),
-		UpdateMaterialEndpoint:    makeUpdateMaterialEndpoint(s),
-		DeleteMaterialEndpoint:    makeDeleteMaterialEndpoint(s),
-	}
-}
-
-func makeGetMaterialsEndpoint(s Service) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		//_ := request.(getMaterialsRequest)
-		m, e := s.GetMaterials(ctx)
-		// return getMaterialsResponse{Materials: m, Err: e}, nil
-		return m, e
-	}
-}
-
-func makeGetMaterialByCodeEndpoint(s Service) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(getMaterialByCodeRequest)
-		m, e := s.GetMaterialByCode(ctx, req.Code)
-		// return getMaterialByCodeResponse{Material: m, Err: e}, nil
-		return m, e
+		AddMaterialEndpoint:        makeAddMaterialEndpoint(s),
+		UpdateMaterialEndpoint:     makeUpdateMaterialEndpoint(s),
+		DeleteMaterialEndpoint:     makeDeleteMaterialEndpoint(s),
+		GetMaterialsEndpoint:       makeGetMaterialsEndpoint(s),
+		GetMaterialByCodeEndpoint:  makeGetMaterialByCodeEndpoint(s),
+		GetBooksEndpoint:           makeGetBooksEndpoint(s),
+		GetBookByCodeEndpoint:      makeGetBookByCodeEndpoint(s),
+		GetMagazinesEndpoint:       makeGetMagazinesEndpoint(s),
+		GetMagazineByCodeEndpoint:  makeGetMagazineByCodeEndpoint(s),
+		GetNewspapersEndpoint:      makeGetNewspapersEndpoint(s),
+		GetNewspaperByCodeEndpoint: makeGetNewspaperByCodeEndpoint(s),
 	}
 }
 
 func makeAddMaterialEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(addMaterialRequest)
-		m, e := s.AddMaterial(ctx, req.Material)
-		//return addMaterialResponse{Material: m, Err: e}, nil
-		return m, e
+
+		switch req.MaterialType {
+		case BookType:
+			return s.AddBook(ctx, req.Book)
+
+		case MagazineType:
+			return s.AddMagazine(ctx, req.Magazine)
+
+		case NewspaperType:
+			return s.AddNewspaper(ctx, req.Newspaper)
+
+		default:
+			return nil, errors.New("invalid material object in AddMaterial")
+		}
 	}
 }
 
 func makeUpdateMaterialEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(updateMaterialRequest)
-		m, e := s.UpdateMaterial(ctx, req.Code, req.Material)
-		//return updateMaterialResponse{Material: m, Err: e}, nil
-		return m, e
+
+		switch req.MaterialType {
+		case BookType:
+			return s.UpdateBook(ctx, req.Code, req.Book)
+
+		case MagazineType:
+			return s.UpdateMagazine(ctx, req.Code, req.Magazine)
+
+		case NewspaperType:
+			return s.UpdateNewspaper(ctx, req.Code, req.Newspaper)
+
+		default:
+			return nil, errors.New("invalid material object in UpdateMaterial")
+		}
 	}
 }
 
@@ -63,71 +80,87 @@ func makeDeleteMaterialEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(deleteMaterialRequest)
 		err = s.DeleteMaterial(ctx, req.Code)
-		//return deleteMaterialResponse{Err: e}, nil
 		return nil, err
 	}
 }
 
-type getMaterialsRequest struct {
+func makeGetMaterialsEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		m, e := s.GetMaterials(ctx)
+		return m, e
+	}
 }
 
-/*
-type getMaterialsResponse struct {
-	Materials []interface{} `json:"materials,omitempty"`
-	Err       error         `json:"err,omitempty"`
+func makeGetMaterialByCodeEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(getByCodeRequest)
+		return s.GetMaterialByCode(ctx, req.Code)
+	}
 }
 
-func (r getMaterialsResponse) error() error { return r.Err }
-*/
-
-type getMaterialByCodeRequest struct {
-	Code string
+func makeGetBooksEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		return s.GetBooks(ctx)
+	}
 }
 
-/*
-type getMaterialByCodeResponse struct {
-	Material interface{} `json:"material,omitempty"`
-	Err      error       `json:"err,omitempty"`
+func makeGetBookByCodeEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(getByCodeRequest)
+		return s.GetBookByCode(ctx, req.Code)
+	}
 }
 
-func (r getMaterialByCodeResponse) error() error { return r.Err }
-*/
+func makeGetMagazinesEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		return s.GetMagazines(ctx)
+	}
+}
+
+func makeGetMagazineByCodeEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(getByCodeRequest)
+		return s.GetMagazineByCode(ctx, req.Code)
+	}
+}
+
+func makeGetNewspapersEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		return s.GetNewspapers(ctx)
+	}
+}
+
+func makeGetNewspaperByCodeEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(getByCodeRequest)
+		return s.GetNewspaperByCode(ctx, req.Code)
+	}
+}
+
+// Request types
 
 type addMaterialRequest struct {
-	Material interface{}
+	MaterialType MaterialType
+	Book         Book
+	Magazine     Magazine
+	Newspaper    Newspaper
 }
-
-/*
-type addMaterialResponse struct {
-	Material interface{} `json:"material,omitempty"`
-	Err      error       `json:"err,omitempty"`
-}
-
-func (r addMaterialResponse) error() error { return r.Err }
-*/
 
 type updateMaterialRequest struct {
-	Code     string
-	Material interface{}
+	Code         string
+	MaterialType MaterialType
+	Book         Book
+	Magazine     Magazine
+	Newspaper    Newspaper
 }
-
-/*
-type updateMaterialResponse struct {
-	Material interface{} `json:"material,omitempty"`
-	Err      error       `json:"err,omitempty"`
-}
-
-func (r updateMaterialResponse) error() error { return r.Err }
-*/
 
 type deleteMaterialRequest struct {
 	Code string
 }
 
-/*
-type deleteMaterialResponse struct {
-	Err error `json:"err,omitempty"`
+type getAllRequest struct {
 }
 
-func (r deleteMaterialResponse) error() error { return r.Err }
-*/
+type getByCodeRequest struct {
+	Code string
+}

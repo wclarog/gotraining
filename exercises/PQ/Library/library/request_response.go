@@ -1,10 +1,12 @@
 package library
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"github.com/gorilla/mux"
+	"io/ioutil"
 	"net/http"
 	"strings"
 )
@@ -15,7 +17,18 @@ var (
 	ErrBadRouting = errors.New("inconsistent mapping between route and handler (programmer error)")
 )
 
-func encodeResponse(_ context.Context, rw http.ResponseWriter, response interface{}) error {
+func encodeResponseOK(_ context.Context, rw http.ResponseWriter, response interface{}) error {
+	rw.WriteHeader(http.StatusCreated)
+	return json.NewEncoder(rw).Encode(response)
+}
+
+func encodeResponseCreated(_ context.Context, rw http.ResponseWriter, response interface{}) error {
+	rw.WriteHeader(http.StatusCreated)
+	return json.NewEncoder(rw).Encode(response)
+}
+
+func encodeResponseNoContent(_ context.Context, rw http.ResponseWriter, response interface{}) error {
+	rw.WriteHeader(http.StatusNoContent)
 	return json.NewEncoder(rw).Encode(response)
 }
 
@@ -29,23 +42,37 @@ func encodeErrorResponse(_ context.Context, err error, rw http.ResponseWriter) {
 	_ = json.NewEncoder(rw).Encode(err.Error())
 }
 
-func decodeGetMaterialsRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	return getMaterialsRequest{}, nil
-}
-
-func decodeGetMaterialByCodeRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	vars := mux.Vars(r)
-	code, ok := vars["code"]
-	if !ok {
-		return nil, ErrBadRouting
-	}
-	return getMaterialByCodeRequest{Code: code}, nil
-}
-
 func decodeAddMaterialRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	var req addMaterialRequest
+	var mat Material
+	var bodyData []byte
 
-	req.Material, err = decodeMaterialFromBody(r)
+	bodyData, err = ioutil.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.NewDecoder(bytes.NewReader(bodyData)).Decode(&mat)
+	if err != nil {
+		return nil, err
+	}
+
+	req.MaterialType = mat.MaterialType
+
+	switch req.MaterialType {
+	case BookType:
+		err = json.NewDecoder(bytes.NewReader(bodyData)).Decode(&req.Book)
+
+	case MagazineType:
+		err = json.NewDecoder(bytes.NewReader(bodyData)).Decode(&req.Magazine)
+
+	case NewspaperType:
+		err = json.NewDecoder(bytes.NewReader(bodyData)).Decode(&req.Newspaper)
+
+	default:
+		return nil, errors.New("invalid material object in decodeAddMaterialRequest")
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -55,14 +82,42 @@ func decodeAddMaterialRequest(_ context.Context, r *http.Request) (request inter
 
 func decodeUpdateMaterialRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	var req updateMaterialRequest
+	var mat Material
 	var ok bool
+	var bodyData []byte
+
 	vars := mux.Vars(r)
 	req.Code, ok = vars["code"]
 	if !ok {
-		return updateMaterialRequest{}, ErrBadRouting
+		return nil, ErrBadRouting
 	}
 
-	req.Material, err = decodeMaterialFromBody(r)
+	bodyData, err = ioutil.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.NewDecoder(bytes.NewReader(bodyData)).Decode(&mat)
+	if err != nil {
+		return nil, err
+	}
+
+	req.MaterialType = mat.MaterialType
+
+	switch req.MaterialType {
+	case BookType:
+		err = json.NewDecoder(bytes.NewReader(bodyData)).Decode(&req.Book)
+
+	case MagazineType:
+		err = json.NewDecoder(bytes.NewReader(bodyData)).Decode(&req.Magazine)
+
+	case NewspaperType:
+		err = json.NewDecoder(bytes.NewReader(bodyData)).Decode(&req.Newspaper)
+
+	default:
+		return nil, errors.New("invalid material object in decodeAddMaterialRequest")
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -79,36 +134,15 @@ func decodeDeleteMaterialRequest(_ context.Context, r *http.Request) (request in
 	return deleteMaterialRequest{Code: code}, nil
 }
 
-func decodeMaterialFromBody(r *http.Request) (request interface{}, err error) {
-	var book Book
-	var magazine Magazine
-	var newspaper Newspaper
-
-	if err = json.NewDecoder(r.Body).Decode(&book); err == nil {
-		return book, nil
-	}
-
-	if err = json.NewDecoder(r.Body).Decode(&magazine); err == nil {
-		return magazine, nil
-	}
-
-	if err = json.NewDecoder(r.Body).Decode(&newspaper); err == nil {
-		return newspaper, nil
-	}
-
-	return nil, errors.New("invalid format of request body (invalid material)")
+func decodeGetAllRequest(_ context.Context, _ *http.Request) (request interface{}, err error) {
+	return getAllRequest{}, nil
 }
 
-/*
-func decodeGetMaterialRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	var req string
-	err := json.NewDecoder(r.Body).Decode(&req)
-	return req, err
+func decodeGetByCodeRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+	vars := mux.Vars(r)
+	code, ok := vars["code"]
+	if !ok {
+		return nil, ErrBadRouting
+	}
+	return getByCodeRequest{Code: code}, nil
 }
-
-func decodeAddMaterialRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var req Material
-	err := json.NewDecoder(r.Body).Decode(&req)
-	return req, err
-}
-*/

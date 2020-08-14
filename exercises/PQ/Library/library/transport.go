@@ -15,38 +15,80 @@ func NewHandler(_ context.Context, options []httptransport.ServerOption, endpoin
 
 	options = append(options, errorEncoder)
 
-	r.Methods(http.MethodGet).Path("/library/materials").Handler(httptransport.NewServer(
-		endpoints.GetMaterialsEndpoint,
-		decodeGetMaterialsRequest,
-		encodeResponse,
-		options...,
-	))
-
-	r.Methods(http.MethodGet).Path("/library/materials/{code}").Handler(httptransport.NewServer(
-		endpoints.GetMaterialByCodeEndpoint,
-		decodeGetMaterialByCodeRequest,
-		encodeResponse,
-		options...,
-	))
-
-	r.Methods(http.MethodPost).Path("/library/materials").Handler(httptransport.NewServer(
+	r.Methods(http.MethodPost).Path("/library/material").Handler(httptransport.NewServer(
 		endpoints.AddMaterialEndpoint,
 		decodeAddMaterialRequest,
-		encodeResponse,
+		encodeResponseCreated,
 		options...,
 	))
 
-	r.Methods(http.MethodPut).Path("/library/materials/{code}").Handler(httptransport.NewServer(
+	r.Methods(http.MethodPut).Path("/library/material/{code}").Handler(httptransport.NewServer(
 		endpoints.UpdateMaterialEndpoint,
 		decodeUpdateMaterialRequest,
-		encodeResponse,
+		encodeResponseNoContent,
 		options...,
 	))
 
-	r.Methods(http.MethodDelete).Path("/library/materials/{code}").Handler(httptransport.NewServer(
+	r.Methods(http.MethodDelete).Path("/library/material/{code}").Handler(httptransport.NewServer(
 		endpoints.DeleteMaterialEndpoint,
 		decodeDeleteMaterialRequest,
-		encodeResponse,
+		encodeResponseNoContent,
+		options...,
+	))
+
+	r.Methods(http.MethodGet).Path("/library/material/material").Handler(httptransport.NewServer(
+		endpoints.GetMaterialsEndpoint,
+		decodeGetAllRequest,
+		encodeResponseOK,
+		options...,
+	))
+
+	r.Methods(http.MethodGet).Path("/library/material/material/{code}").Handler(httptransport.NewServer(
+		endpoints.GetMaterialByCodeEndpoint,
+		decodeGetByCodeRequest,
+		encodeResponseOK,
+		options...,
+	))
+
+	r.Methods(http.MethodGet).Path("/library/material/book").Handler(httptransport.NewServer(
+		endpoints.GetBooksEndpoint,
+		decodeGetAllRequest,
+		encodeResponseOK,
+		options...,
+	))
+
+	r.Methods(http.MethodGet).Path("/library/material/book/{code}").Handler(httptransport.NewServer(
+		endpoints.GetBookByCodeEndpoint,
+		decodeGetByCodeRequest,
+		encodeResponseOK,
+		options...,
+	))
+
+	r.Methods(http.MethodGet).Path("/library/material/magazine").Handler(httptransport.NewServer(
+		endpoints.GetMagazinesEndpoint,
+		decodeGetAllRequest,
+		encodeResponseOK,
+		options...,
+	))
+
+	r.Methods(http.MethodGet).Path("/library/material/magazine/{code}").Handler(httptransport.NewServer(
+		endpoints.GetMagazineByCodeEndpoint,
+		decodeGetByCodeRequest,
+		encodeResponseOK,
+		options...,
+	))
+
+	r.Methods(http.MethodGet).Path("/library/material/newspaper").Handler(httptransport.NewServer(
+		endpoints.GetNewspapersEndpoint,
+		decodeGetAllRequest,
+		encodeResponseOK,
+		options...,
+	))
+
+	r.Methods(http.MethodGet).Path("/library/material/newspaper/{code}").Handler(httptransport.NewServer(
+		endpoints.GetNewspaperByCodeEndpoint,
+		decodeGetByCodeRequest,
+		encodeResponseOK,
 		options...,
 	))
 

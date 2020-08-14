@@ -1,0 +1,421 @@
+{
+	"info": {
+		"_postman_id": "6857b2b8-5f4d-4935-9bf7-089cac4be09f",
+		"name": "Go Library Case Study",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Add Book",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"uniqueCode\": \"Book_New\",\r\n    \"name\": \"Book New\",\r\n    \"dateOfEmission\": \"2020-08-12T17:55:42.2515429-03:00\",\r\n    \"numberOfPages\": 123,\r\n    \"materialType\": 0,\r\n    \"authorName\": \"AuthorName New\",\r\n    \"genre\": \"Genre New\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8082/library/material",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"library",
+						"material"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add Magazine",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"uniqueCode\": \"Magazine_New\",\r\n    \"name\": \"Magazine New\",\r\n    \"dateOfEmission\": \"2020-08-12T20:50:10.4107405-03:00\",\r\n    \"numberOfPages\": 121,\r\n    \"materialType\": 2,\r\n    \"sections\": [\r\n        {\r\n            \"code\": \"Section code New 0\",\r\n            \"content\": \"Section content New 0\"\r\n        },\r\n        {\r\n            \"code\": \"Section code New 1\",\r\n            \"content\": \"Section content New 1\"\r\n        },\r\n        {\r\n            \"code\": \"Section code New 2\",\r\n            \"content\": \"Section content New 2\"\r\n        }\r\n    ],\r\n    \"url\": \"Url New\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8082/library/material",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"library",
+						"material"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add Newspaper",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n        \"uniqueCode\": \"Newspaper_New\",\r\n        \"name\": \"Newspaper New\",\r\n        \"dateOfEmission\": \"2020-08-12T20:38:23.3959422-03:00\",\r\n        \"numberOfPages\": 987,\r\n        \"materialType\": 1,\r\n        \"url\": \"Url New\"\r\n    }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8082/library/material",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"library",
+						"material"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Book",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"uniqueCode\": \"Book_New\",\r\n    \"name\": \"Book Updated\",\r\n    \"dateOfEmission\": \"2020-08-12T17:55:42.2515429-03:00\",\r\n    \"numberOfPages\": 321,\r\n    \"materialType\": 0,\r\n    \"authorName\": \"AuthorName Updated\",\r\n    \"genre\": \"Genre Updated\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8082/library/material/Book_New",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"library",
+						"material",
+						"Book_New"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Magazine",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"uniqueCode\": \"Magazine_New\",\r\n    \"name\": \"Magazine Updated\",\r\n    \"dateOfEmission\": \"2020-08-12T17:55:42.2515429-03:00\",\r\n    \"numberOfPages\": 321,\r\n    \"materialType\": 2,\r\n    \"sections\": [\r\n        {\r\n            \"code\": \"Section code Updated 0\",\r\n            \"content\": \"Section content Updated 0\"\r\n        },\r\n        {\r\n            \"code\": \"Section code Updated 1\",\r\n            \"content\": \"Section content Updated 1\"\r\n        },\r\n        {\r\n            \"code\": \"Section code Updated 2\",\r\n            \"content\": \"Section content Updated 2\"\r\n        },\r\n        {\r\n            \"code\": \"Section code Updated 3\",\r\n            \"content\": \"Section content Updated 3\"\r\n        }\r\n    ],\r\n    \"url\": \"Url Updated\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8082/library/material/Magazine_New",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"library",
+						"material",
+						"Magazine_New"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Newspaper",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"uniqueCode\": \"Newspaper_New\",\r\n    \"name\": \"Newspaper Updated\",\r\n    \"dateOfEmission\": \"2020-08-12T17:55:42.2515429-03:00\",\r\n    \"numberOfPages\": 321,\r\n    \"materialType\": 1,\r\n    \"url\": \"Url Updated\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8082/library/material/Newspaper_New",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"library",
+						"material",
+						"Newspaper_New"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Material",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8082/library/material/Book_32",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"library",
+						"material",
+						"Book_32"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get All Materials",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8082/library/material/material",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"library",
+						"material",
+						"material"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get by Code Material",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8082/library/material/material/Newspaper_New",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"library",
+						"material",
+						"material",
+						"Newspaper_New"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Paged",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://localhost:44323/api/v1/Blueprint/paged?pageSize=5&pageIndex=1",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "44323",
+					"path": [
+						"api",
+						"v1",
+						"Blueprint",
+						"paged"
+					],
+					"query": [
+						{
+							"key": "pageSize",
+							"value": "5"
+						},
+						{
+							"key": "pageIndex",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get by Code Book",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8082/library/material/book/Book_42",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"library",
+						"material",
+						"book",
+						"Book_42"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get All Books",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8082/library/material/book",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"library",
+						"material",
+						"book"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get All Magazines",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8082/library/material/magazine",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"library",
+						"material",
+						"magazine"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get by Code Magazine",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8082/library/material/magazine/Magazine_42",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"library",
+						"material",
+						"magazine",
+						"Magazine_42"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get All Newspapers",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8082/library/material/newspaper",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"library",
+						"material",
+						"newspaper"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get by Code Newspaper",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8082/library/material/newspaper/Newspaper_42",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"library",
+						"material",
+						"newspaper",
+						"Newspaper_42"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

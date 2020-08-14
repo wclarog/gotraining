@@ -2,29 +2,26 @@ package library
 
 import "time"
 
-type Material struct {
-	UniqueCode     string    `json:"unique_code"`
-	Name           string    `json:"name"`
-	DateOfEmission time.Time `json:"date_of_emission"`
-	NumberOfPages  int       `json:"number_of_pages"`
-}
+type MaterialType int
 
-type DTOMaterial struct {
-	UniqueCode     string    `json:"unique_code"`
-	Name           string    `json:"name"`
-	DateOfEmission time.Time `json:"date_of_emission"`
-	NumberOfPages  int       `json:"number_of_pages"`
+const (
+	BookType MaterialType = iota
+	NewspaperType
+	MagazineType
+)
+
+// Domain
+type Material struct {
+	UniqueCode     string       `json:"uniqueCode"`
+	Name           string       `json:"name"`
+	DateOfEmission time.Time    `json:"dateOfEmission"`
+	NumberOfPages  int          `json:"numberOfPages"`
+	MaterialType   MaterialType `json:"materialType"`
 }
 
 type Book struct {
 	Material
-	AuthorName string `json:"author_name"`
-	Genre      string `json:"genre"`
-}
-
-type DTOBook struct {
-	DTOMaterial
-	AuthorName string `json:"author_name"`
+	AuthorName string `json:"authorName"`
 	Genre      string `json:"genre"`
 }
 
@@ -33,19 +30,82 @@ type Newspaper struct {
 	Url string `json:"url"`
 }
 
-type DTONewspaper struct {
-	DTOMaterial
-	Url string `json:"url"`
-}
-
 type Magazine struct {
 	Material
-	Sections []string `json:"sections"`
-	Url      string   `json:"url"`
+	Sections []Section `json:"sections"`
+	Url      string    `json:"url"`
+}
+
+type Section struct {
+	Code    string `json:"code"`
+	Content string `json:"content"`
+}
+
+// DTOs
+type DTOMaterial struct {
+	UniqueCode     string
+	Name           string
+	DateOfEmission time.Time
+	NumberOfPages  int
+	MaterialType   MaterialType
+}
+
+type DTOBook struct {
+	DTOMaterial
+	AuthorName string
+	Genre      string
+}
+
+type DTONewspaper struct {
+	DTOMaterial
+	Url string
 }
 
 type DTOMagazine struct {
 	DTOMaterial
-	Sections []string `json:"sections"`
-	Url      string   `json:"url"`
+	Sections []DTOSection
+	Url      string
+}
+
+type DTOSection struct {
+	Code    string
+	Content string
+}
+
+// MaterialTyped interface
+
+type MaterialTyped interface {
+	GetMaterialType() MaterialType
+}
+
+func (m Material) GetMaterialType() MaterialType {
+	return m.MaterialType
+}
+
+func (b Book) GetMaterialType() MaterialType {
+	return b.MaterialType
+}
+
+func (m Magazine) GetMaterialType() MaterialType {
+	return m.MaterialType
+}
+
+func (n Newspaper) GetMaterialType() MaterialType {
+	return n.MaterialType
+}
+
+func (m DTOMaterial) GetMaterialType() MaterialType {
+	return m.MaterialType
+}
+
+func (b DTOBook) GetMaterialType() MaterialType {
+	return b.MaterialType
+}
+
+func (m DTOMagazine) GetMaterialType() MaterialType {
+	return m.MaterialType
+}
+
+func (n DTONewspaper) GetMaterialType() MaterialType {
+	return n.MaterialType
 }
