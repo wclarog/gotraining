@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	uuid2 "github.com/google/uuid"
+	"strconv"
 	"time"
 )
 
@@ -356,8 +357,8 @@ func createSections() []Section {
 	sections := make([]Section, 3)
 
 	for i := 0; i < 3; i++ {
-		sections[i].Code = string(i)
-		sections[i].Name = "section " + string(i)
+		sections[i].Code = strconv.Itoa(i)
+		sections[i].Name = "section " + strconv.Itoa(i)
 	}
 	return sections
 }
