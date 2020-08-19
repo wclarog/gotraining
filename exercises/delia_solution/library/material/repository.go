@@ -86,9 +86,9 @@ func (r repository) DeleteMaterial(ctx context.Context, uniqueCode string) error
 
 func (r repository) GetBooks(ctx context.Context) ([]BookDTO, error) {
 
-	books := make([]BookDTO, len(r.mockData))
+	books := make([]BookDTO, 0, len(r.mockData))
 
-	for index, material := range r.mockData {
+	for _, material := range r.mockData {
 
 		resMaterial, err := r.getMaterial(material)
 
@@ -97,7 +97,7 @@ func (r repository) GetBooks(ctx context.Context) ([]BookDTO, error) {
 		}
 
 		if resMaterial.Type == BookType {
-			books[index] = material.(BookDTO)
+			books = append(books, material.(BookDTO))
 		}
 	}
 
@@ -109,14 +109,14 @@ func (r repository) GetBookByCode(ctx context.Context, uniqueCode string) (BookD
 	item, found := r.findItem(uniqueCode)
 
 	if found == -1 {
-		return BookDTO{}, errors.New(fmt.Sprintf("Material %s not found.", uniqueCode))
+		return BookDTO{}, errors.New(fmt.Sprintf("Book %s not found.", uniqueCode))
 	}
 
 	if item.GetTypeMaterial() != BookType {
 		return BookDTO{}, errors.New(fmt.Sprintf("Material %s is not a book.", uniqueCode))
 	}
 
-	return item.(BookDTO), nil
+	return r.mockData[found].(BookDTO), nil
 }
 
 func (r repository) AddBook(ctx context.Context, book BookDTO) (BookDTO, error) {
@@ -153,9 +153,9 @@ func (r repository) UpdateBook(ctx context.Context, uniqueCode string, book Book
 
 func (r repository) GetNewspapers(ctx context.Context) ([]NewsPaperDTO, error) {
 
-	newspapers := make([]NewsPaperDTO, len(r.mockData))
+	newspapers := make([]NewsPaperDTO, 0, len(r.mockData))
 
-	for index, material := range r.mockData {
+	for _, material := range r.mockData {
 
 		resMaterial, err := r.getMaterial(material)
 
@@ -164,7 +164,7 @@ func (r repository) GetNewspapers(ctx context.Context) ([]NewsPaperDTO, error) {
 		}
 
 		if resMaterial.Type == NewsPaperType {
-			newspapers[index] = material.(NewsPaperDTO)
+			newspapers = append(newspapers, material.(NewsPaperDTO))
 		}
 	}
 
@@ -183,7 +183,7 @@ func (r repository) GetNewspaperByCode(ctx context.Context, uniqueCode string) (
 		return NewsPaperDTO{}, errors.New(fmt.Sprintf("Material %s is not a book.", uniqueCode))
 	}
 
-	return item.(NewsPaperDTO), nil
+	return r.mockData[found].(NewsPaperDTO), nil
 }
 
 func (r repository) AddNewspaper(ctx context.Context, newspaper NewsPaperDTO) (NewsPaperDTO, error) {
@@ -220,9 +220,9 @@ func (r repository) UpdateNewspaper(ctx context.Context, uniqueCode string, news
 
 func (r repository) GetMagazines(ctx context.Context) ([]MagazineDTO, error) {
 
-	magazines := make([]MagazineDTO, len(r.mockData))
+	magazines := make([]MagazineDTO, 0, len(r.mockData))
 
-	for index, material := range r.mockData {
+	for _, material := range r.mockData {
 
 		resMaterial, err := r.getMaterial(material)
 
@@ -231,7 +231,7 @@ func (r repository) GetMagazines(ctx context.Context) ([]MagazineDTO, error) {
 		}
 
 		if resMaterial.Type == NewsPaperType {
-			magazines[index] = material.(MagazineDTO)
+			magazines = append(magazines, material.(MagazineDTO))
 		}
 	}
 
@@ -250,7 +250,7 @@ func (r repository) GetMagazineByCode(ctx context.Context, uniqueCode string) (M
 		return MagazineDTO{}, errors.New(fmt.Sprintf("Material %s is not a book.", uniqueCode))
 	}
 
-	return item.(MagazineDTO), nil
+	return r.mockData[found].(MagazineDTO), nil
 }
 
 func (r repository) AddMagazine(ctx context.Context, magazine MagazineDTO) (MagazineDTO, error) {
@@ -288,7 +288,7 @@ func createMockData() []GenericMaterial {
 	mockMaterial := make([]GenericMaterial, 100)
 
 	for i := 0; i < len(mockMaterial); i++ {
-		guid := fmt.Sprint(uuid2.NewRandom())
+		guid := uuid2.New().String()
 		// books
 		if i < 40 {
 			bookName := fmt.Sprintf("%s%d", "book_", i)
