@@ -1,6 +1,7 @@
 package material
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -85,4 +86,18 @@ func (m MagazineDTO) GetTypeMaterial() TypeMaterial {
 
 func (n NewsPaperDTO) GetTypeMaterial() TypeMaterial {
 	return n.Type
+}
+
+type NotFoundError struct {
+	invalidCode string // description of error
+}
+
+func (e *NotFoundError) Error() string { return fmt.Sprintf("Book not found: %s", e.invalidCode) }
+
+type InvalidBookTypeError struct {
+	invalidCode string // description of error
+}
+
+func (e *InvalidBookTypeError) Error() string {
+	return fmt.Sprintf("Book not found: %s", e.invalidCode)
 }

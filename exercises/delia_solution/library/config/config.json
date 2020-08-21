@@ -1,0 +1,8 @@
+{
+  "HTTP_PORT": "8080",
+  "DB_USER": "admin",
+  "DB_PASS": "Abcd1234.",
+  "DB_HOST": "localhost",
+  "DB_PORT": "3608",
+  "DB_NAME": "materials"
+}

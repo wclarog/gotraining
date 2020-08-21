@@ -18,17 +18,17 @@ type Repository interface {
 	GetBooks(ctx context.Context) ([]BookDTO, error)
 	GetBookByCode(ctx context.Context, uniqueCode string) (BookDTO, error)
 	AddBook(ctx context.Context, book BookDTO) (BookDTO, error)
-	UpdateBook(ctx context.Context, uniqueCode string, book BookDTO) (BookDTO, error)
+	UpdateBook(ctx context.Context, uniqueCode string, book BookDTO) error
 
 	GetNewspapers(ctx context.Context) ([]NewsPaperDTO, error)
 	GetNewspaperByCode(ctx context.Context, uniqueCode string) (NewsPaperDTO, error)
 	AddNewspaper(ctx context.Context, newspaper NewsPaperDTO) (NewsPaperDTO, error)
-	UpdateNewspaper(ctx context.Context, uniqueCode string, newspaper NewsPaperDTO) (NewsPaperDTO, error)
+	UpdateNewspaper(ctx context.Context, uniqueCode string, newspaper NewsPaperDTO) error
 
 	GetMagazines(ctx context.Context) ([]MagazineDTO, error)
 	GetMagazineByCode(ctx context.Context, uniqueCode string) (MagazineDTO, error)
 	AddMagazine(ctx context.Context, magazine MagazineDTO) (MagazineDTO, error)
-	UpdateMagazine(ctx context.Context, uniqueCode string, magazine MagazineDTO) (MagazineDTO, error)
+	UpdateMagazine(ctx context.Context, uniqueCode string, magazine MagazineDTO) error
 }
 
 type repository struct {
@@ -109,11 +109,14 @@ func (r repository) GetBookByCode(ctx context.Context, uniqueCode string) (BookD
 	item, found := r.findItem(uniqueCode)
 
 	if found == -1 {
-		return BookDTO{}, errors.New(fmt.Sprintf("Book %s not found.", uniqueCode))
+		// return BookDTO{}, errors.New(fmt.Sprintf("Book %s not found.", uniqueCode))
+		notFoundErr := NotFoundError{invalidCode: uniqueCode}
+		return BookDTO{}, &notFoundErr
 	}
 
 	if item.GetTypeMaterial() != BookType {
-		return BookDTO{}, errors.New(fmt.Sprintf("Material %s is not a book.", uniqueCode))
+		invalidTypeErr := InvalidBookTypeError{invalidCode: uniqueCode}
+		return BookDTO{}, &invalidTypeErr
 	}
 
 	return r.mockData[found].(BookDTO), nil
@@ -134,21 +137,21 @@ func (r repository) AddBook(ctx context.Context, book BookDTO) (BookDTO, error) 
 	return book, nil
 }
 
-func (r repository) UpdateBook(ctx context.Context, uniqueCode string, book BookDTO) (BookDTO, error) {
+func (r repository) UpdateBook(ctx context.Context, uniqueCode string, book BookDTO) error {
 
 	item, index := r.findItem(uniqueCode)
 
 	if index == -1 {
-		return BookDTO{}, errors.New(fmt.Sprintf("Book not found: %s", uniqueCode))
+		return errors.New(fmt.Sprintf("Book not found: %s", uniqueCode))
 	}
 
 	if item.GetTypeMaterial() != BookType {
-		return BookDTO{}, errors.New(fmt.Sprintf("Material %s is not a book.", uniqueCode))
+		return errors.New(fmt.Sprintf("Material %s is not a book.", uniqueCode))
 	}
 
 	r.mockData[index] = book
 
-	return book, nil
+	return nil
 }
 
 func (r repository) GetNewspapers(ctx context.Context) ([]NewsPaperDTO, error) {
@@ -201,21 +204,21 @@ func (r repository) AddNewspaper(ctx context.Context, newspaper NewsPaperDTO) (N
 	return newspaper, nil
 }
 
-func (r repository) UpdateNewspaper(ctx context.Context, uniqueCode string, newspaper NewsPaperDTO) (NewsPaperDTO, error) {
+func (r repository) UpdateNewspaper(ctx context.Context, uniqueCode string, newspaper NewsPaperDTO) error {
 
 	item, index := r.findItem(uniqueCode)
 
 	if index == -1 {
-		return NewsPaperDTO{}, errors.New(fmt.Sprintf("Book not found: %s", uniqueCode))
+		return errors.New(fmt.Sprintf("Book not found: %s", uniqueCode))
 	}
 
 	if item.GetTypeMaterial() != NewsPaperType {
-		return NewsPaperDTO{}, errors.New(fmt.Sprintf("Material %s is not a book.", uniqueCode))
+		return errors.New(fmt.Sprintf("Material %s is not a book.", uniqueCode))
 	}
 
 	r.mockData[index] = newspaper
 
-	return newspaper, nil
+	return nil
 }
 
 func (r repository) GetMagazines(ctx context.Context) ([]MagazineDTO, error) {
@@ -268,20 +271,21 @@ func (r repository) AddMagazine(ctx context.Context, magazine MagazineDTO) (Maga
 	return magazine, nil
 }
 
-func (r repository) UpdateMagazine(ctx context.Context, uniqueCode string, magazine MagazineDTO) (MagazineDTO, error) {
+func (r repository) UpdateMagazine(ctx context.Context, uniqueCode string, magazine MagazineDTO) error {
 	item, index := r.findItem(uniqueCode)
 
 	if index == -1 {
-		return MagazineDTO{}, errors.New(fmt.Sprintf("Book not found: %s", uniqueCode))
+		notFoundErr := NotFoundError{invalidCode: uniqueCode}
+		return errors.New(notFoundErr.Error())
 	}
 
 	if item.GetTypeMaterial() != MagazineType {
-		return MagazineDTO{}, errors.New(fmt.Sprintf("Material %s is not a book.", uniqueCode))
+		return errors.New(fmt.Sprintf("Material %s is not a book.", uniqueCode))
 	}
 
 	r.mockData[index] = magazine
 
-	return magazine, nil
+	return nil
 }
 
 func createMockData() []GenericMaterial {
