@@ -11,7 +11,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-sql/sqlexp"
 	"go-kit-template/config"
-	"go-kit-template/library"
+	"go-kit-template/materials"
 	"net/http"
 	"os"
 	"os/signal"
@@ -37,9 +37,9 @@ func main() {
 	ctx := context.Background()
 	db, _ := sql.Open(sqlexp.DialectMySQL, config.Values.DB.DB_HOST)
 
-	repository := library.NewRepository(db)
-	srv := library.NewService(repository, logger)
-	endpoints := library.MakeEndpoints(srv)
+	repository := materials.NewRepository(db)
+	srv := materials.NewService(repository, logger)
+	endpoints := materials.MakeEndpoints(srv)
 
 	errs := make(chan error)
 
@@ -52,7 +52,7 @@ func main() {
 	go func() {
 		_ = logger.Log("listening on port", *httpAddr)
 		var serverOptions []httptransport.ServerOption
-		handler := library.NewHandler(ctx, serverOptions, endpoints)
+		handler := materials.NewHandler(ctx, serverOptions, endpoints)
 		errs <- http.ListenAndServe(*httpAddr, handler)
 	}()
 
