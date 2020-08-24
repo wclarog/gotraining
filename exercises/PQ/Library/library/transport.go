@@ -36,56 +36,56 @@ func NewHandler(_ context.Context, options []httptransport.ServerOption, endpoin
 		options...,
 	))
 
-	r.Methods(http.MethodGet).Path("/library/material/material").Handler(httptransport.NewServer(
+	r.Methods(http.MethodGet).Path("/library/material").Handler(httptransport.NewServer(
 		endpoints.GetMaterialsEndpoint,
 		decodeGetAllRequest,
 		encodeResponseOK,
 		options...,
 	))
 
-	r.Methods(http.MethodGet).Path("/library/material/material/{code}").Handler(httptransport.NewServer(
+	r.Methods(http.MethodGet).Path("/library/material/{code}").Handler(httptransport.NewServer(
 		endpoints.GetMaterialByCodeEndpoint,
 		decodeGetByCodeRequest,
 		encodeResponseOK,
 		options...,
 	))
 
-	r.Methods(http.MethodGet).Path("/library/material/book").Handler(httptransport.NewServer(
+	r.Methods(http.MethodGet).Path("/library/book").Handler(httptransport.NewServer(
 		endpoints.GetBooksEndpoint,
 		decodeGetAllRequest,
 		encodeResponseOK,
 		options...,
 	))
 
-	r.Methods(http.MethodGet).Path("/library/material/book/{code}").Handler(httptransport.NewServer(
+	r.Methods(http.MethodGet).Path("/library/book/{code}").Handler(httptransport.NewServer(
 		endpoints.GetBookByCodeEndpoint,
 		decodeGetByCodeRequest,
 		encodeResponseOK,
 		options...,
 	))
 
-	r.Methods(http.MethodGet).Path("/library/material/magazine").Handler(httptransport.NewServer(
+	r.Methods(http.MethodGet).Path("/library/magazine").Handler(httptransport.NewServer(
 		endpoints.GetMagazinesEndpoint,
 		decodeGetAllRequest,
 		encodeResponseOK,
 		options...,
 	))
 
-	r.Methods(http.MethodGet).Path("/library/material/magazine/{code}").Handler(httptransport.NewServer(
+	r.Methods(http.MethodGet).Path("/library/magazine/{code}").Handler(httptransport.NewServer(
 		endpoints.GetMagazineByCodeEndpoint,
 		decodeGetByCodeRequest,
 		encodeResponseOK,
 		options...,
 	))
 
-	r.Methods(http.MethodGet).Path("/library/material/newspaper").Handler(httptransport.NewServer(
+	r.Methods(http.MethodGet).Path("/library/newspaper").Handler(httptransport.NewServer(
 		endpoints.GetNewspapersEndpoint,
 		decodeGetAllRequest,
 		encodeResponseOK,
 		options...,
 	))
 
-	r.Methods(http.MethodGet).Path("/library/material/newspaper/{code}").Handler(httptransport.NewServer(
+	r.Methods(http.MethodGet).Path("/library/newspaper/{code}").Handler(httptransport.NewServer(
 		endpoints.GetNewspaperByCodeEndpoint,
 		decodeGetByCodeRequest,
 		encodeResponseOK,
