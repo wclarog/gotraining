@@ -11,5 +11,6 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/matryer/respond v1.0.1 // indirect
 	github.com/spf13/viper v1.5.0
+	github.com/stretchr/testify v1.2.2
 	gopkg.in/yaml.v2 v2.2.5 // indirect
 )

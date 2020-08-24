@@ -27,6 +27,13 @@ type Service interface {
 	UpdateMagazine(ctx context.Context, uniqueCode string, magazine Magazine) (Magazine, error)
 
 	dtoToMaterials(ms []DTOMaterial) ([]Material, error)
+	dtoToMaterial(m DTOMaterial) (Material, error)
+	dtoToBooks(bs []DTOBook) ([]Book, error)
+	dtoToBook(b DTOBook) (Book, error)
+	dtoToMagazines(ms []DTOMagazine) ([]Magazine, error)
+	dtoToMagazine(m DTOMagazine) (Magazine, error)
+	dtoToNewspapers(ns []DTONewspaper) ([]Newspaper, error)
+	dtoToNewspaper(n DTONewspaper) (Newspaper, error)
 }
 
 type service struct {
