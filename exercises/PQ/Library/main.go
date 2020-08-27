@@ -40,6 +40,7 @@ func main() {
 	repository := library.NewRepository(db)
 	srv := library.NewService(repository, logger)
 	endpoints := library.MakeEndpoints(srv)
+	endpoints = library.NewAuthMiddleware(endpoints)
 
 	errs := make(chan error)
 
