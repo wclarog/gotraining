@@ -32,12 +32,12 @@ type Repository interface {
 }
 
 type repository struct {
-	db       *sql.DB
+	db *sql.DB
 }
 
 func NewRepository(db *sql.DB) Repository {
 	return &repository{
-		db:       db,
+		db: db,
 	}
 }
 
@@ -57,7 +57,7 @@ func (r repository) GetMaterials(_ context.Context, client *ent.Client) ([]DTOMa
 }
 
 func (r repository) GetMaterialByCode(_ context.Context, client *ent.Client, uniqueCode string) (DTOMaterial, error) {
-	material, err := client..
+	material, err := client.Car.
 		Query().
 		Where(user.NameEQ("a8m")).
 		// `Only` fails if no user found,
