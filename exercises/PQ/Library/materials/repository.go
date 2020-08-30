@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/facebook/ent/examples/start/ent"
+	"log"
 	"time"
 )
 
@@ -31,42 +33,42 @@ type Repository interface {
 
 type repository struct {
 	db       *sql.DB
-	testData map[string]MaterialTyped
 }
 
 func NewRepository(db *sql.DB) Repository {
 	return &repository{
 		db:       db,
-		testData: initTestData(),
 	}
 }
 
 // Materials
-func (r repository) GetMaterials(_ context.Context) ([]DTOMaterial, error) {
-	materials := make([]DTOMaterial, len(r.testData))
-
-	idx := 0
-	for _, material := range r.testData {
-		resMaterial, err := r.getMaterial(material)
-		if err != nil {
-			return nil, err
-		}
-
-		materials[idx] = resMaterial
-		idx++
+func (r repository) GetMaterials(_ context.Context, client *ent.Client) ([]DTOMaterial, error) {
+	materials, err := client.Material.
+		Query().
+		Where(user.NameEQ("a8m")).
+		// `Only` fails if no user found,
+		// or more than 1 user returned.
+		Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed querying user: %v", err)
 	}
-
+	log.Println("user returned: ", u)
 	return materials, nil
 }
 
-func (r repository) GetMaterialByCode(_ context.Context, uniqueCode string) (DTOMaterial, error) {
-	material, exists := r.testData[uniqueCode]
-
-	if !exists {
-		return DTOMaterial{}, errors.New(fmt.Sprintf("material %s not found in the database", uniqueCode))
+func (r repository) GetMaterialByCode(_ context.Context, client *ent.Client, uniqueCode string) (DTOMaterial, error) {
+	material, err := client..
+		Query().
+		Where(user.NameEQ("a8m")).
+		// `Only` fails if no user found,
+		// or more than 1 user returned.
+		Only(ctx)
+	if err != nil {
+		return DTOMaterial{}, fmt.Errorf("failed querying user: %v", err)
 	}
+	log.Println("user returned: ", u)
+	return material, nil
 
-	return r.getMaterial(material)
 }
 
 func (r repository) DeleteMaterial(_ context.Context, uniqueCode string) error {
