@@ -3,7 +3,7 @@
 package newspaper
 
 import (
-	"go-kit-template/ent/predicate"
+	"excercise-library/ent/predicate"
 
 	"github.com/facebook/ent/dialect/sql"
 )

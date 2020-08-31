@@ -4,9 +4,9 @@ package enttest
 
 import (
 	"context"
-	"go-kit-template/ent"
+	"excercise-library/ent"
 	// required by schema hooks.
-	_ "go-kit-template/ent/runtime"
+	_ "excercise-library/ent/runtime"
 
 	"github.com/facebook/ent/dialect/sql/schema"
 )

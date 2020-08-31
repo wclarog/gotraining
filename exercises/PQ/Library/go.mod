@@ -1,4 +1,4 @@
-module go-kit-template
+module excercise-library
 
 go 1.13
 

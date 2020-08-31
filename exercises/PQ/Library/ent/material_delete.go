@@ -4,9 +4,9 @@ package ent
 
 import (
 	"context"
+	"excercise-library/ent/material"
+	"excercise-library/ent/predicate"
 	"fmt"
-	"go-kit-template/ent/material"
-	"go-kit-template/ent/predicate"
 
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"

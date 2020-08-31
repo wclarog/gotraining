@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"database/sql"
+	"excercise-library/config"
+	"excercise-library/materials"
 	"flag"
 	"fmt"
 	"github.com/go-kit/kit/log"
@@ -10,8 +12,6 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-sql/sqlexp"
-	"go-kit-template/config"
-	"go-kit-template/materials"
 	"net/http"
 	"os"
 	"os/signal"

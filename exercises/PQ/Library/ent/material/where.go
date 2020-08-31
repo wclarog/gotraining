@@ -3,7 +3,7 @@
 package material
 
 import (
-	"go-kit-template/ent/predicate"
+	"excercise-library/ent/predicate"
 	"time"
 
 	"github.com/facebook/ent/dialect/sql"

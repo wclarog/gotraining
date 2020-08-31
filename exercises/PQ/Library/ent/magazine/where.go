@@ -3,7 +3,7 @@
 package magazine
 
 import (
-	"go-kit-template/ent/predicate"
+	"excercise-library/ent/predicate"
 
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"

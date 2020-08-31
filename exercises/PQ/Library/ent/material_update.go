@@ -4,12 +4,12 @@ package ent
 
 import (
 	"context"
+	"excercise-library/ent/book"
+	"excercise-library/ent/magazine"
+	"excercise-library/ent/material"
+	"excercise-library/ent/newspaper"
+	"excercise-library/ent/predicate"
 	"fmt"
-	"go-kit-template/ent/book"
-	"go-kit-template/ent/magazine"
-	"go-kit-template/ent/material"
-	"go-kit-template/ent/newspaper"
-	"go-kit-template/ent/predicate"
 	"time"
 
 	"github.com/facebook/ent/dialect/sql"

@@ -4,8 +4,8 @@ package hook
 
 import (
 	"context"
+	"excercise-library/ent"
 	"fmt"
-	"go-kit-template/ent"
 )
 
 // The BookFunc type is an adapter to allow the use of ordinary

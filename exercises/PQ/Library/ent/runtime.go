@@ -3,8 +3,8 @@
 package ent
 
 import (
-	"go-kit-template/ent/material"
-	"go-kit-template/ent/schema"
+	"excercise-library/ent/material"
+	"excercise-library/ent/schema"
 )
 
 // The init function reads all schema descriptors with runtime

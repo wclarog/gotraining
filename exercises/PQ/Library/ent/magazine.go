@@ -3,8 +3,8 @@
 package ent
 
 import (
+	"excercise-library/ent/magazine"
 	"fmt"
-	"go-kit-template/ent/magazine"
 	"strings"
 
 	"github.com/facebook/ent/dialect/sql"

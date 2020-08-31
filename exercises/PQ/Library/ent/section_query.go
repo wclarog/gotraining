@@ -5,9 +5,9 @@ package ent
 import (
 	"context"
 	"errors"
+	"excercise-library/ent/predicate"
+	"excercise-library/ent/section"
 	"fmt"
-	"go-kit-template/ent/predicate"
-	"go-kit-template/ent/section"
 	"math"
 
 	"github.com/facebook/ent/dialect/sql"

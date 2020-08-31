@@ -5,11 +5,11 @@ package ent
 import (
 	"context"
 	"errors"
+	"excercise-library/ent/book"
+	"excercise-library/ent/magazine"
+	"excercise-library/ent/material"
+	"excercise-library/ent/newspaper"
 	"fmt"
-	"go-kit-template/ent/book"
-	"go-kit-template/ent/magazine"
-	"go-kit-template/ent/material"
-	"go-kit-template/ent/newspaper"
 	"time"
 
 	"github.com/facebook/ent/dialect/sql/sqlgraph"

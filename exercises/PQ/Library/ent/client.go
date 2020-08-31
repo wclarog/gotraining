@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"log"
 
-	"go-kit-template/ent/migrate"
+	"excercise-library/ent/migrate"
 
-	"go-kit-template/ent/book"
-	"go-kit-template/ent/magazine"
-	"go-kit-template/ent/material"
-	"go-kit-template/ent/newspaper"
-	"go-kit-template/ent/section"
+	"excercise-library/ent/book"
+	"excercise-library/ent/magazine"
+	"excercise-library/ent/material"
+	"excercise-library/ent/newspaper"
+	"excercise-library/ent/section"
 
 	"github.com/facebook/ent/dialect"
 	"github.com/facebook/ent/dialect/sql"

@@ -5,8 +5,8 @@ package privacy
 import (
 	"context"
 	"errors"
+	"excercise-library/ent"
 	"fmt"
-	"go-kit-template/ent"
 )
 
 var (

@@ -4,9 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"excercise-library/ent"
+	material2 "excercise-library/ent/material"
 	"fmt"
-	"go-kit-template/ent"
-	material2 "go-kit-template/ent/material"
 	"log"
 	//"time"
 )

@@ -5,9 +5,9 @@ package ent
 import (
 	"context"
 	"errors"
+	"excercise-library/ent/magazine"
+	"excercise-library/ent/section"
 	"fmt"
-	"go-kit-template/ent/magazine"
-	"go-kit-template/ent/section"
 
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
