@@ -40,6 +40,7 @@ func main() {
 	repository := materials.NewRepository(db)
 	srv := materials.NewService(repository, logger)
 	endpoints := materials.MakeEndpoints(srv)
+	//endpoints = materials.NewAuthMiddleware(endpoints)
 
 	errs := make(chan error)
 
