@@ -12,10 +12,10 @@ func NewHandler(_ context.Context, options []httptransport.ServerOption, endpoin
 	r.Use(commonMiddleware)
 
 	errorEncoder := httptransport.ServerErrorEncoder(encodeErrorResponse)
-	//insertJWT := httptransport.ServerBefore(InsertJwtIntoContext())
+	insertJWT := httptransport.ServerBefore(InsertJwtIntoContext())
 
-	//options = append(options, errorEncoder, insertJWT)
-	options = append(options, errorEncoder)
+	options = append(options, errorEncoder, insertJWT)
+	//options = append(options, errorEncoder)
 
 	r.Methods(http.MethodPost).Path("/library/material").Handler(httptransport.NewServer(
 		endpoints.AddMaterialEndpoint,

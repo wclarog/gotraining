@@ -97,7 +97,7 @@ func (r repository) DeleteMaterial(ctx context.Context, uniqueCode string) error
 // Books
 
 func (r repository) GetBooks(ctx context.Context) ([]DTOBook, error) {
-	repoMaterials, err := r.client.
+	repoBooks, err := r.client.
 		Material.
 		Query().
 		Where(material2.MaterialTypeEQ(int(BookType))).
@@ -107,17 +107,10 @@ func (r repository) GetBooks(ctx context.Context) ([]DTOBook, error) {
 		return nil, fmt.Errorf("failed querying books: %v", err)
 	}
 
-	repoBooks := make([]*ent.Book, len(repoMaterials))
-
-	for idx, m := range repoMaterials {
-		repoBooks[idx] = m.Edges.Book
-
-	}
-
 	log.Println("books returned")
 
 	var books []DTOBook
-	books, err = r.repoBooksToDto(repoMaterials, repoBooks)
+	books, err = r.repoBooksToDto(repoBooks)
 	if err != nil {
 		return nil, err
 	}
@@ -126,27 +119,21 @@ func (r repository) GetBooks(ctx context.Context) ([]DTOBook, error) {
 }
 
 func (r repository) GetBookByCode(ctx context.Context, uniqueCode string) (DTOBook, error) {
-	repoMaterial, err := r.client.
+	repoBook, err := r.client.
 		Material.
 		Query().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
 		Where(material2.MaterialTypeEQ(int(BookType))).
+		WithBook().
 		Only(ctx)
 	if err != nil {
 		return DTOBook{}, fmt.Errorf("failed querying books: %v", err)
 	}
 
-	var repoBook *ent.Book
-
-	repoBook, err = repoMaterial.QueryBook().Only(ctx)
-	if err != nil {
-		return DTOBook{}, errors.New("missing book for material in GetBookByCode")
-	}
-
 	log.Println("book returned")
 
 	var book DTOBook
-	book, err = r.repoBookToDto(repoMaterial, repoBook)
+	book, err = r.repoBookToDto(repoBook)
 	if err != nil {
 		return DTOBook{}, err
 	}
@@ -155,20 +142,15 @@ func (r repository) GetBookByCode(ctx context.Context, uniqueCode string) (DTOBo
 }
 
 func (r repository) AddBook(ctx context.Context, book DTOBook) (DTOBook, error) {
-	repoMaterial, repoBook, err := r.dtoToRepoBook(book)
-	if err != nil {
-		return DTOBook{}, err
-	}
-
-	_, err = r.client.
+	_, err := r.client.
 		Material.
 		Create().
-		SetUniqueCode(repoMaterial.UniqueCode).
-		SetName(repoMaterial.Name).
-		SetDateOfEmission(repoMaterial.DateOfEmission).
-		SetNumberOfPages(repoMaterial.NumberOfPages).
-		SetMaterialType(repoMaterial.MaterialType).
-		SetBook(repoBook).
+		SetUniqueCode(book.UniqueCode).
+		SetName(book.Name).
+		SetDateOfEmission(book.DateOfEmission).
+		SetNumberOfPages(book.NumberOfPages).
+		SetMaterialType(int(book.MaterialType)).
+		//SetBook(repoBook).
 		Save(ctx)
 	if err != nil {
 		return DTOBook{}, fmt.Errorf("failed adding book: %v", err)
@@ -180,20 +162,16 @@ func (r repository) AddBook(ctx context.Context, book DTOBook) (DTOBook, error) 
 }
 
 func (r repository) UpdateBook(ctx context.Context, uniqueCode string, book DTOBook) (DTOBook, error) {
-	repoMaterial, repoBook, err := r.dtoToRepoBook(book)
-	if err != nil {
-		return DTOBook{}, err
-	}
-
-	_, err = r.client.
+	_, err := r.client.
 		Material.
 		Update().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
-		SetName(repoMaterial.Name).
-		SetDateOfEmission(repoMaterial.DateOfEmission).
-		SetNumberOfPages(repoMaterial.NumberOfPages).
-		SetMaterialType(repoMaterial.MaterialType).
-		SetBook(repoBook).
+		Where(material2.MaterialTypeEQ(int(BookType))).
+		SetName(book.Name).
+		SetDateOfEmission(book.DateOfEmission).
+		SetNumberOfPages(book.NumberOfPages).
+		SetMaterialType(int(book.MaterialType)).
+		//SetBook(repoBook).
 		Save(ctx)
 	if err != nil {
 		return DTOBook{}, fmt.Errorf("failed updating book: %v", err)
@@ -207,28 +185,20 @@ func (r repository) UpdateBook(ctx context.Context, uniqueCode string, book DTOB
 // Newspapers
 
 func (r repository) GetNewspapers(ctx context.Context) ([]DTONewspaper, error) {
-	repoMaterials, err := r.client.
+	repoNewspapers, err := r.client.
 		Material.
 		Query().
 		Where(material2.MaterialTypeEQ(int(NewspaperType))).
+		WithNewspaper().
 		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed querying newspapers: %v", err)
 	}
 
-	repoNewspapers := make([]*ent.Newspaper, len(repoMaterials))
-
-	for idx, m := range repoMaterials {
-		repoNewspapers[idx], err = m.QueryNewspaper().Only(ctx)
-		if err != nil {
-			return nil, errors.New("missing newspaper for material in GetNewspapers")
-		}
-	}
-
 	log.Println("newspapers returned")
 
 	var newspapers []DTONewspaper
-	newspapers, err = r.repoNewspapersToDto(repoMaterials, repoNewspapers)
+	newspapers, err = r.repoNewspapersToDto(repoNewspapers)
 	if err != nil {
 		return nil, err
 	}
@@ -237,27 +207,21 @@ func (r repository) GetNewspapers(ctx context.Context) ([]DTONewspaper, error) {
 }
 
 func (r repository) GetNewspaperByCode(ctx context.Context, uniqueCode string) (DTONewspaper, error) {
-	repoMaterial, err := r.client.
+	repoNewspaper, err := r.client.
 		Material.
 		Query().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
 		Where(material2.MaterialTypeEQ(int(NewspaperType))).
+		WithNewspaper().
 		Only(ctx)
 	if err != nil {
 		return DTONewspaper{}, fmt.Errorf("failed querying newspapers: %v", err)
 	}
 
-	var repoNewspaper *ent.Newspaper
-
-	repoNewspaper, err = repoMaterial.QueryNewspaper().Only(ctx)
-	if err != nil {
-		return DTONewspaper{}, errors.New("missing newspaper for material in GetNewspaperByCode")
-	}
-
 	log.Println("newspaper returned")
 
 	var newspaper DTONewspaper
-	newspaper, err = r.repoNewspaperToDto(repoMaterial, repoNewspaper)
+	newspaper, err = r.repoNewspaperToDto(repoNewspaper)
 	if err != nil {
 		return DTONewspaper{}, err
 	}
@@ -266,20 +230,15 @@ func (r repository) GetNewspaperByCode(ctx context.Context, uniqueCode string) (
 }
 
 func (r repository) AddNewspaper(ctx context.Context, newspaper DTONewspaper) (DTONewspaper, error) {
-	repoMaterial, repoNewspaper, err := r.dtoToRepoNewspaper(newspaper)
-	if err != nil {
-		return DTONewspaper{}, err
-	}
-
-	_, err = r.client.
+	_, err := r.client.
 		Material.
 		Create().
-		SetUniqueCode(repoMaterial.UniqueCode).
-		SetName(repoMaterial.Name).
-		SetDateOfEmission(repoMaterial.DateOfEmission).
-		SetNumberOfPages(repoMaterial.NumberOfPages).
-		SetMaterialType(repoMaterial.MaterialType).
-		SetNewspaper(repoNewspaper).
+		SetUniqueCode(newspaper.UniqueCode).
+		SetName(newspaper.Name).
+		SetDateOfEmission(newspaper.DateOfEmission).
+		SetNumberOfPages(newspaper.NumberOfPages).
+		SetMaterialType(int(newspaper.MaterialType)).
+		//SetNewspaper(newspaper).
 		Save(ctx)
 	if err != nil {
 		return DTONewspaper{}, fmt.Errorf("failed adding book: %v", err)
@@ -291,20 +250,16 @@ func (r repository) AddNewspaper(ctx context.Context, newspaper DTONewspaper) (D
 }
 
 func (r repository) UpdateNewspaper(ctx context.Context, uniqueCode string, newspaper DTONewspaper) (DTONewspaper, error) {
-	repoMaterial, repoNewspaper, err := r.dtoToRepoNewspaper(newspaper)
-	if err != nil {
-		return DTONewspaper{}, err
-	}
-
-	_, err = r.client.
+	_, err := r.client.
 		Material.
 		Update().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
-		SetName(repoMaterial.Name).
-		SetDateOfEmission(repoMaterial.DateOfEmission).
-		SetNumberOfPages(repoMaterial.NumberOfPages).
-		SetMaterialType(repoMaterial.MaterialType).
-		SetNewspaper(repoNewspaper).
+		Where(material2.MaterialTypeEQ(int(NewspaperType))).
+		SetName(newspaper.Name).
+		SetDateOfEmission(newspaper.DateOfEmission).
+		SetNumberOfPages(newspaper.NumberOfPages).
+		SetMaterialType(int(newspaper.MaterialType)).
+		//SetNewspaper(newspaper).
 		Save(ctx)
 	if err != nil {
 		return DTONewspaper{}, fmt.Errorf("failed updating newspaper: %v", err)
@@ -318,28 +273,20 @@ func (r repository) UpdateNewspaper(ctx context.Context, uniqueCode string, news
 // Magazines
 
 func (r repository) GetMagazines(ctx context.Context) ([]DTOMagazine, error) {
-	repoMaterials, err := r.client.
+	repoMagazines, err := r.client.
 		Material.
 		Query().
 		Where(material2.MaterialTypeEQ(int(MagazineType))).
+		WithMagazine().
 		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed querying magazines: %v", err)
 	}
 
-	repoMagazines := make([]*ent.Magazine, len(repoMaterials))
-
-	for idx, m := range repoMaterials {
-		repoMagazines[idx], err = m.QueryMagazine().Only(ctx)
-		if err != nil {
-			return nil, errors.New("missing book for material in GetBooks")
-		}
-	}
-
 	log.Println("magazines returned")
 
 	var magazines []DTOMagazine
-	magazines, err = r.repoMagazinesToDto(repoMaterials, repoMagazines)
+	magazines, err = r.repoMagazinesToDto(repoMagazines)
 	if err != nil {
 		return nil, err
 	}
@@ -348,27 +295,21 @@ func (r repository) GetMagazines(ctx context.Context) ([]DTOMagazine, error) {
 }
 
 func (r repository) GetMagazineByCode(ctx context.Context, uniqueCode string) (DTOMagazine, error) {
-	repoMaterial, err := r.client.
+	repoMagazine, err := r.client.
 		Material.
 		Query().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
 		Where(material2.MaterialTypeEQ(int(MagazineType))).
+		WithMagazine().
 		Only(ctx)
 	if err != nil {
 		return DTOMagazine{}, fmt.Errorf("failed querying magazines: %v", err)
 	}
 
-	var repoMagazine *ent.Magazine
-
-	repoMagazine, err = repoMaterial.QueryMagazine().Only(ctx)
-	if err != nil {
-		return DTOMagazine{}, errors.New("missing magazine for material in GetMagazineByCode")
-	}
-
 	log.Println("magazine returned")
 
 	var magazine DTOMagazine
-	magazine, err = r.repoMagazineToDto(repoMaterial, repoMagazine)
+	magazine, err = r.repoMagazineToDto(repoMagazine)
 	if err != nil {
 		return DTOMagazine{}, err
 	}
@@ -377,20 +318,15 @@ func (r repository) GetMagazineByCode(ctx context.Context, uniqueCode string) (D
 }
 
 func (r repository) AddMagazine(ctx context.Context, magazine DTOMagazine) (DTOMagazine, error) {
-	repoMaterial, repoMagazine, err := r.dtoToRepoMagazine(magazine)
-	if err != nil {
-		return DTOMagazine{}, err
-	}
-
-	_, err = r.client.
+	_, err := r.client.
 		Material.
 		Create().
-		SetUniqueCode(repoMaterial.UniqueCode).
-		SetName(repoMaterial.Name).
-		SetDateOfEmission(repoMaterial.DateOfEmission).
-		SetNumberOfPages(repoMaterial.NumberOfPages).
-		SetMaterialType(repoMaterial.MaterialType).
-		SetMagazine(repoMagazine).
+		SetUniqueCode(magazine.UniqueCode).
+		SetName(magazine.Name).
+		SetDateOfEmission(magazine.DateOfEmission).
+		SetNumberOfPages(magazine.NumberOfPages).
+		SetMaterialType(int(magazine.MaterialType)).
+		//SetMagazine(repoMagazine).
 		Save(ctx)
 	if err != nil {
 		return DTOMagazine{}, fmt.Errorf("failed adding magazine: %v", err)
@@ -402,20 +338,16 @@ func (r repository) AddMagazine(ctx context.Context, magazine DTOMagazine) (DTOM
 }
 
 func (r repository) UpdateMagazine(ctx context.Context, uniqueCode string, magazine DTOMagazine) (DTOMagazine, error) {
-	repoMaterial, repoMagazine, err := r.dtoToRepoMagazine(magazine)
-	if err != nil {
-		return DTOMagazine{}, err
-	}
-
-	_, err = r.client.
+	_, err := r.client.
 		Material.
 		Update().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
-		SetName(repoMaterial.Name).
-		SetDateOfEmission(repoMaterial.DateOfEmission).
-		SetNumberOfPages(repoMaterial.NumberOfPages).
-		SetMaterialType(repoMaterial.MaterialType).
-		SetMagazine(repoMagazine).
+		Where(material2.MaterialTypeEQ(int(MagazineType))).
+		SetName(magazine.Name).
+		SetDateOfEmission(magazine.DateOfEmission).
+		SetNumberOfPages(magazine.NumberOfPages).
+		SetMaterialType(int(magazine.MaterialType)).
+		//SetMagazine(magazine).
 		Save(ctx)
 	if err != nil {
 		return DTOMagazine{}, fmt.Errorf("failed updating magazine: %v", err)
@@ -503,59 +435,35 @@ func (r repository) repoMaterialsToDto(ms []*ent.Material) ([]DTOMaterial, error
 	return dtoMaterials, nil
 }
 
-func (r repository) dtoToRepoMaterial(m DTOMaterial) (*ent.Material, error) {
-	return &ent.Material{
-		UniqueCode:     m.UniqueCode,
-		Name:           m.Name,
-		DateOfEmission: m.DateOfEmission,
-		NumberOfPages:  m.NumberOfPages,
-		MaterialType:   int(m.MaterialType),
-	}, nil
-}
-
-func (r repository) dtoToRepoMaterials(ms []DTOMaterial) ([]*ent.Material, error) {
-	var err error
-	materials := make([]*ent.Material, len(ms))
-
-	for idx, m := range ms {
-		materials[idx], err = r.dtoToRepoMaterial(m)
-
-		if err != nil {
-			return nil, errors.New("invalid material object in dtoToRepoMaterials")
-		}
-
-	}
-
-	return materials, nil
-}
-
 // Books
 
-func (r repository) repoBookToDto(m *ent.Material, b *ent.Book) (DTOBook, error) {
-	mt, err := r.intToMaterialType(m.MaterialType)
+func (r repository) repoBookToDto(b *ent.Material) (DTOBook, error) {
+	mt, err := r.intToMaterialType(b.MaterialType)
 	if err != nil {
 		return DTOBook{}, errors.New("invalid material type in repoBookToDto")
 	}
 
+	book := b.Edges.Book
+
 	return DTOBook{
 		DTOMaterial: DTOMaterial{
-			UniqueCode:     m.UniqueCode,
-			Name:           m.Name,
-			DateOfEmission: m.DateOfEmission,
-			NumberOfPages:  m.NumberOfPages,
+			UniqueCode:     b.UniqueCode,
+			Name:           b.Name,
+			DateOfEmission: b.DateOfEmission,
+			NumberOfPages:  b.NumberOfPages,
 			MaterialType:   mt,
 		},
-		AuthorName: b.AuthorName,
-		Genre:      b.Genre,
+		AuthorName: book.AuthorName,
+		Genre:      book.Genre,
 	}, nil
 }
 
-func (r repository) repoBooksToDto(ms []*ent.Material, bs []*ent.Book) ([]DTOBook, error) {
+func (r repository) repoBooksToDto(bs []*ent.Material) ([]DTOBook, error) {
 	var err error
-	dtoBooks := make([]DTOBook, len(ms))
+	dtoBooks := make([]DTOBook, len(bs))
 
-	for idx, m := range ms {
-		dtoBooks[idx], err = r.repoBookToDto(m, bs[idx])
+	for idx, b := range bs {
+		dtoBooks[idx], err = r.repoBookToDto(b)
 
 		if err != nil {
 			return nil, errors.New("invalid book object in repoBooksToDto")
@@ -565,63 +473,34 @@ func (r repository) repoBooksToDto(ms []*ent.Material, bs []*ent.Book) ([]DTOBoo
 	return dtoBooks, nil
 }
 
-func (r repository) dtoToRepoBook(b DTOBook) (*ent.Material, *ent.Book, error) {
-	return &ent.Material{
-			UniqueCode:     b.UniqueCode,
-			Name:           b.Name,
-			DateOfEmission: b.DateOfEmission,
-			NumberOfPages:  b.NumberOfPages,
-			MaterialType:   int(b.MaterialType),
-		},
-		&ent.Book{
-			AuthorName: b.AuthorName,
-			Genre:      b.Genre,
-		},
-		nil
-}
-
-func (r repository) dtoToRepoBooks(bs []DTOBook) ([]*ent.Material, []*ent.Book, error) {
-	var err error
-	materials := make([]*ent.Material, len(bs))
-	books := make([]*ent.Book, len(bs))
-
-	for idx, b := range bs {
-		materials[idx], books[idx], err = r.dtoToRepoBook(b)
-		if err != nil {
-			return nil, nil, errors.New("invalid material object in dtoToRepoBooks")
-		}
-
-	}
-
-	return materials, books, nil
-}
-
 // Newspaper
 
-func (r repository) repoNewspaperToDto(m *ent.Material, n *ent.Newspaper) (DTONewspaper, error) {
-	mt, err := r.intToMaterialType(m.MaterialType)
+func (r repository) repoNewspaperToDto(n *ent.Material) (DTONewspaper, error) {
+	mt, err := r.intToMaterialType(n.MaterialType)
 	if err != nil {
 		return DTONewspaper{}, errors.New("invalid material type in repoNewspaperToDto")
 	}
 
+	newspaper := n.Edges.Newspaper
+
 	return DTONewspaper{
 		DTOMaterial: DTOMaterial{
-			UniqueCode:     m.UniqueCode,
-			Name:           m.Name,
-			DateOfEmission: m.DateOfEmission,
-			NumberOfPages:  m.NumberOfPages,
+			UniqueCode:     n.UniqueCode,
+			Name:           n.Name,
+			DateOfEmission: n.DateOfEmission,
+			NumberOfPages:  n.NumberOfPages,
 			MaterialType:   mt,
 		},
-		Url: n.URL,
+		Url: newspaper.URL,
 	}, nil
 }
 
-func (r repository) repoNewspapersToDto(ns []*ent.Material, b []*ent.Newspaper) ([]DTONewspaper, error) {
+func (r repository) repoNewspapersToDto(ns []*ent.Material) ([]DTONewspaper, error) {
 	var err error
 	dtoNewspapers := make([]DTONewspaper, len(ns))
 
 	for idx, n := range ns {
-		dtoNewspapers[idx], err = r.repoNewspaperToDto(n, b[idx])
+		dtoNewspapers[idx], err = r.repoNewspaperToDto(n)
 
 		if err != nil {
 			return nil, errors.New("invalid newspaper object in repoNewspapersToDto")
@@ -631,43 +510,15 @@ func (r repository) repoNewspapersToDto(ns []*ent.Material, b []*ent.Newspaper) 
 	return dtoNewspapers, nil
 }
 
-func (r repository) dtoToRepoNewspaper(n DTONewspaper) (*ent.Material, *ent.Newspaper, error) {
-	return &ent.Material{
-			UniqueCode:     n.UniqueCode,
-			Name:           n.Name,
-			DateOfEmission: n.DateOfEmission,
-			NumberOfPages:  n.NumberOfPages,
-			MaterialType:   int(n.MaterialType),
-		},
-		&ent.Newspaper{
-			URL: n.Url,
-		},
-		nil
-}
-
-func (r repository) dtoToRepoNewspapers(ns []DTONewspaper) ([]*ent.Material, []*ent.Newspaper, error) {
-	var err error
-	materials := make([]*ent.Material, len(ns))
-	newspapers := make([]*ent.Newspaper, len(ns))
-
-	for idx, n := range ns {
-		materials[idx], newspapers[idx], err = r.dtoToRepoNewspaper(n)
-		if err != nil {
-			return nil, nil, errors.New("invalid material object in dtoToRepoNewspapers")
-		}
-
-	}
-
-	return materials, newspapers, nil
-}
-
 // Magazine
 
-func (r repository) repoMagazineToDto(m *ent.Material, mg *ent.Magazine) (DTOMagazine, error) {
+func (r repository) repoMagazineToDto(m *ent.Material) (DTOMagazine, error) {
 	mt, err := r.intToMaterialType(m.MaterialType)
 	if err != nil {
 		return DTOMagazine{}, errors.New("invalid material type in repoMagazineToDto")
 	}
+
+	magazine := m.Edges.Magazine
 
 	return DTOMagazine{
 		DTOMaterial: DTOMaterial{
@@ -677,16 +528,16 @@ func (r repository) repoMagazineToDto(m *ent.Material, mg *ent.Magazine) (DTOMag
 			NumberOfPages:  m.NumberOfPages,
 			MaterialType:   mt,
 		},
-		Url: mg.URL,
+		Url: magazine.URL,
 	}, nil
 }
 
-func (r repository) repoMagazinesToDto(ms []*ent.Material, mgs []*ent.Magazine) ([]DTOMagazine, error) {
+func (r repository) repoMagazinesToDto(ms []*ent.Material) ([]DTOMagazine, error) {
 	var err error
 	dtoMagazines := make([]DTOMagazine, len(ms))
 
 	for idx, m := range ms {
-		dtoMagazines[idx], err = r.repoMagazineToDto(m, mgs[idx])
+		dtoMagazines[idx], err = r.repoMagazineToDto(m)
 
 		if err != nil {
 			return nil, errors.New("invalid magazine object in repoMagazinesToDto")
@@ -694,34 +545,4 @@ func (r repository) repoMagazinesToDto(ms []*ent.Material, mgs []*ent.Magazine) 
 	}
 
 	return dtoMagazines, nil
-}
-
-func (r repository) dtoToRepoMagazine(mg DTOMagazine) (*ent.Material, *ent.Magazine, error) {
-	return &ent.Material{
-			UniqueCode:     mg.UniqueCode,
-			Name:           mg.Name,
-			DateOfEmission: mg.DateOfEmission,
-			NumberOfPages:  mg.NumberOfPages,
-			MaterialType:   int(mg.MaterialType),
-		},
-		&ent.Magazine{
-			URL: mg.Url,
-		},
-		nil
-}
-
-func (r repository) dtoToRepoMagazines(mgs []DTOMagazine) ([]*ent.Material, []*ent.Magazine, error) {
-	var err error
-	materials := make([]*ent.Material, len(mgs))
-	magazines := make([]*ent.Magazine, len(mgs))
-
-	for idx, mg := range mgs {
-		materials[idx], magazines[idx], err = r.dtoToRepoMagazine(mg)
-		if err != nil {
-			return nil, nil, errors.New("invalid material object in dtoToRepoMagazines")
-		}
-
-	}
-
-	return materials, magazines, nil
 }
