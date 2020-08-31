@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"errors"
+	"excercise-library/ent/material"
 	"excercise-library/ent/newspaper"
 	"excercise-library/ent/predicate"
 	"fmt"
@@ -23,6 +24,9 @@ type NewspaperQuery struct {
 	order      []OrderFunc
 	unique     []string
 	predicates []predicate.Newspaper
+	// eager-loading edges.
+	withRelatedMaterial *MaterialQuery
+	withFKs             bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -50,6 +54,24 @@ func (nq *NewspaperQuery) Offset(offset int) *NewspaperQuery {
 func (nq *NewspaperQuery) Order(o ...OrderFunc) *NewspaperQuery {
 	nq.order = append(nq.order, o...)
 	return nq
+}
+
+// QueryRelatedMaterial chains the current query on the relatedMaterial edge.
+func (nq *NewspaperQuery) QueryRelatedMaterial() *MaterialQuery {
+	query := &MaterialQuery{config: nq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := nq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(newspaper.Table, newspaper.FieldID, nq.sqlQuery()),
+			sqlgraph.To(material.Table, material.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, newspaper.RelatedMaterialTable, newspaper.RelatedMaterialColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(nq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Newspaper entity in the query. Returns *NotFoundError when no newspaper was found.
@@ -231,6 +253,17 @@ func (nq *NewspaperQuery) Clone() *NewspaperQuery {
 	}
 }
 
+//  WithRelatedMaterial tells the query-builder to eager-loads the nodes that are connected to
+// the "relatedMaterial" edge. The optional arguments used to configure the query builder of the edge.
+func (nq *NewspaperQuery) WithRelatedMaterial(opts ...func(*MaterialQuery)) *NewspaperQuery {
+	query := &MaterialQuery{config: nq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	nq.withRelatedMaterial = query
+	return nq
+}
+
 // GroupBy used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -295,13 +328,26 @@ func (nq *NewspaperQuery) prepareQuery(ctx context.Context) error {
 
 func (nq *NewspaperQuery) sqlAll(ctx context.Context) ([]*Newspaper, error) {
 	var (
-		nodes = []*Newspaper{}
-		_spec = nq.querySpec()
+		nodes       = []*Newspaper{}
+		withFKs     = nq.withFKs
+		_spec       = nq.querySpec()
+		loadedTypes = [1]bool{
+			nq.withRelatedMaterial != nil,
+		}
 	)
+	if nq.withRelatedMaterial != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, newspaper.ForeignKeys...)
+	}
 	_spec.ScanValues = func() []interface{} {
 		node := &Newspaper{config: nq.config}
 		nodes = append(nodes, node)
 		values := node.scanValues()
+		if withFKs {
+			values = append(values, node.fkValues()...)
+		}
 		return values
 	}
 	_spec.Assign = func(values ...interface{}) error {
@@ -309,6 +355,7 @@ func (nq *NewspaperQuery) sqlAll(ctx context.Context) ([]*Newspaper, error) {
 			return fmt.Errorf("ent: Assign called without calling ScanValues")
 		}
 		node := nodes[len(nodes)-1]
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(values...)
 	}
 	if err := sqlgraph.QueryNodes(ctx, nq.driver, _spec); err != nil {
@@ -317,6 +364,32 @@ func (nq *NewspaperQuery) sqlAll(ctx context.Context) ([]*Newspaper, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+
+	if query := nq.withRelatedMaterial; query != nil {
+		ids := make([]int, 0, len(nodes))
+		nodeids := make(map[int][]*Newspaper)
+		for i := range nodes {
+			if fk := nodes[i].material_id; fk != nil {
+				ids = append(ids, *fk)
+				nodeids[*fk] = append(nodeids[*fk], nodes[i])
+			}
+		}
+		query.Where(material.IDIn(ids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := nodeids[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "material_id" returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.RelatedMaterial = n
+			}
+		}
+	}
+
 	return nodes, nil
 }
 

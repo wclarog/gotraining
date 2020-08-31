@@ -115,7 +115,7 @@ func DateOfEmission(v time.Time) predicate.Material {
 }
 
 // NumberOfPages applies equality check predicate on the "numberOfPages" field. It's identical to NumberOfPagesEQ.
-func NumberOfPages(v int) predicate.Material {
+func NumberOfPages(v uint) predicate.Material {
 	return predicate.Material(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldNumberOfPages), v))
 	})
@@ -427,21 +427,21 @@ func DateOfEmissionLTE(v time.Time) predicate.Material {
 }
 
 // NumberOfPagesEQ applies the EQ predicate on the "numberOfPages" field.
-func NumberOfPagesEQ(v int) predicate.Material {
+func NumberOfPagesEQ(v uint) predicate.Material {
 	return predicate.Material(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldNumberOfPages), v))
 	})
 }
 
 // NumberOfPagesNEQ applies the NEQ predicate on the "numberOfPages" field.
-func NumberOfPagesNEQ(v int) predicate.Material {
+func NumberOfPagesNEQ(v uint) predicate.Material {
 	return predicate.Material(func(s *sql.Selector) {
 		s.Where(sql.NEQ(s.C(FieldNumberOfPages), v))
 	})
 }
 
 // NumberOfPagesIn applies the In predicate on the "numberOfPages" field.
-func NumberOfPagesIn(vs ...int) predicate.Material {
+func NumberOfPagesIn(vs ...uint) predicate.Material {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -458,7 +458,7 @@ func NumberOfPagesIn(vs ...int) predicate.Material {
 }
 
 // NumberOfPagesNotIn applies the NotIn predicate on the "numberOfPages" field.
-func NumberOfPagesNotIn(vs ...int) predicate.Material {
+func NumberOfPagesNotIn(vs ...uint) predicate.Material {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -475,28 +475,28 @@ func NumberOfPagesNotIn(vs ...int) predicate.Material {
 }
 
 // NumberOfPagesGT applies the GT predicate on the "numberOfPages" field.
-func NumberOfPagesGT(v int) predicate.Material {
+func NumberOfPagesGT(v uint) predicate.Material {
 	return predicate.Material(func(s *sql.Selector) {
 		s.Where(sql.GT(s.C(FieldNumberOfPages), v))
 	})
 }
 
 // NumberOfPagesGTE applies the GTE predicate on the "numberOfPages" field.
-func NumberOfPagesGTE(v int) predicate.Material {
+func NumberOfPagesGTE(v uint) predicate.Material {
 	return predicate.Material(func(s *sql.Selector) {
 		s.Where(sql.GTE(s.C(FieldNumberOfPages), v))
 	})
 }
 
 // NumberOfPagesLT applies the LT predicate on the "numberOfPages" field.
-func NumberOfPagesLT(v int) predicate.Material {
+func NumberOfPagesLT(v uint) predicate.Material {
 	return predicate.Material(func(s *sql.Selector) {
 		s.Where(sql.LT(s.C(FieldNumberOfPages), v))
 	})
 }
 
 // NumberOfPagesLTE applies the LTE predicate on the "numberOfPages" field.
-func NumberOfPagesLTE(v int) predicate.Material {
+func NumberOfPagesLTE(v uint) predicate.Material {
 	return predicate.Material(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldNumberOfPages), v))
 	})
@@ -584,7 +584,7 @@ func HasBook() predicate.Material {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(BookTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, BookTable, BookColumn),
+			sqlgraph.Edge(sqlgraph.O2O, false, BookTable, BookColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -596,7 +596,7 @@ func HasBookWith(preds ...predicate.Book) predicate.Material {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(BookInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, BookTable, BookColumn),
+			sqlgraph.Edge(sqlgraph.O2O, false, BookTable, BookColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
@@ -612,7 +612,7 @@ func HasNewspaper() predicate.Material {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(NewspaperTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, NewspaperTable, NewspaperColumn),
+			sqlgraph.Edge(sqlgraph.O2O, false, NewspaperTable, NewspaperColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -624,7 +624,7 @@ func HasNewspaperWith(preds ...predicate.Newspaper) predicate.Material {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(NewspaperInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, NewspaperTable, NewspaperColumn),
+			sqlgraph.Edge(sqlgraph.O2O, false, NewspaperTable, NewspaperColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
@@ -640,7 +640,7 @@ func HasMagazine() predicate.Material {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(MagazineTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, MagazineTable, MagazineColumn),
+			sqlgraph.Edge(sqlgraph.O2O, false, MagazineTable, MagazineColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -652,7 +652,7 @@ func HasMagazineWith(preds ...predicate.Magazine) predicate.Material {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(MagazineInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, MagazineTable, MagazineColumn),
+			sqlgraph.Edge(sqlgraph.O2O, false, MagazineTable, MagazineColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

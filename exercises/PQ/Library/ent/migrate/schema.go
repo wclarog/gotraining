@@ -13,25 +13,43 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "author_name", Type: field.TypeString},
 		{Name: "genre", Type: field.TypeString},
+		{Name: "material_id", Type: field.TypeInt, Unique: true, Nullable: true},
 	}
 	// BookTable holds the schema information for the "Book" table.
 	BookTable = &schema.Table{
-		Name:        "Book",
-		Columns:     BookColumns,
-		PrimaryKey:  []*schema.Column{BookColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{},
+		Name:       "Book",
+		Columns:    BookColumns,
+		PrimaryKey: []*schema.Column{BookColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "Book_Material_Book",
+				Columns: []*schema.Column{BookColumns[3]},
+
+				RefColumns: []*schema.Column{MaterialColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// MagazineColumns holds the columns for the "Magazine" table.
 	MagazineColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "url", Type: field.TypeString},
+		{Name: "material_id", Type: field.TypeInt, Unique: true, Nullable: true},
 	}
 	// MagazineTable holds the schema information for the "Magazine" table.
 	MagazineTable = &schema.Table{
-		Name:        "Magazine",
-		Columns:     MagazineColumns,
-		PrimaryKey:  []*schema.Column{MagazineColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{},
+		Name:       "Magazine",
+		Columns:    MagazineColumns,
+		PrimaryKey: []*schema.Column{MagazineColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "Magazine_Material_Magazine",
+				Columns: []*schema.Column{MagazineColumns[2]},
+
+				RefColumns: []*schema.Column{MaterialColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// MaterialColumns holds the columns for the "Material" table.
 	MaterialColumns = []*schema.Column{
@@ -39,52 +57,36 @@ var (
 		{Name: "unique_code", Type: field.TypeString, Unique: true},
 		{Name: "name", Type: field.TypeString},
 		{Name: "date_of_emission", Type: field.TypeTime},
-		{Name: "number_of_pages", Type: field.TypeInt},
+		{Name: "number_of_pages", Type: field.TypeUint},
 		{Name: "material_type", Type: field.TypeInt},
-		{Name: "material_book", Type: field.TypeInt, Nullable: true},
-		{Name: "material_newspaper", Type: field.TypeInt, Nullable: true},
-		{Name: "material_magazine", Type: field.TypeInt, Nullable: true},
 	}
 	// MaterialTable holds the schema information for the "Material" table.
 	MaterialTable = &schema.Table{
-		Name:       "Material",
-		Columns:    MaterialColumns,
-		PrimaryKey: []*schema.Column{MaterialColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:  "Material_Book_Book",
-				Columns: []*schema.Column{MaterialColumns[6]},
-
-				RefColumns: []*schema.Column{BookColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-			{
-				Symbol:  "Material_Newspaper_Newspaper",
-				Columns: []*schema.Column{MaterialColumns[7]},
-
-				RefColumns: []*schema.Column{NewspaperColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-			{
-				Symbol:  "Material_Magazine_Magazine",
-				Columns: []*schema.Column{MaterialColumns[8]},
-
-				RefColumns: []*schema.Column{MagazineColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-		},
+		Name:        "Material",
+		Columns:     MaterialColumns,
+		PrimaryKey:  []*schema.Column{MaterialColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{},
 	}
 	// NewspaperColumns holds the columns for the "Newspaper" table.
 	NewspaperColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "url", Type: field.TypeString},
+		{Name: "material_id", Type: field.TypeInt, Unique: true, Nullable: true},
 	}
 	// NewspaperTable holds the schema information for the "Newspaper" table.
 	NewspaperTable = &schema.Table{
-		Name:        "Newspaper",
-		Columns:     NewspaperColumns,
-		PrimaryKey:  []*schema.Column{NewspaperColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{},
+		Name:       "Newspaper",
+		Columns:    NewspaperColumns,
+		PrimaryKey: []*schema.Column{NewspaperColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "Newspaper_Material_Newspaper",
+				Columns: []*schema.Column{NewspaperColumns[2]},
+
+				RefColumns: []*schema.Column{MaterialColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// SectionColumns holds the columns for the "Section" table.
 	SectionColumns = []*schema.Column{
@@ -119,8 +121,8 @@ var (
 )
 
 func init() {
-	MaterialTable.ForeignKeys[0].RefTable = BookTable
-	MaterialTable.ForeignKeys[1].RefTable = NewspaperTable
-	MaterialTable.ForeignKeys[2].RefTable = MagazineTable
+	BookTable.ForeignKeys[0].RefTable = MaterialTable
+	MagazineTable.ForeignKeys[0].RefTable = MaterialTable
+	NewspaperTable.ForeignKeys[0].RefTable = MaterialTable
 	SectionTable.ForeignKeys[0].RefTable = MagazineTable
 }

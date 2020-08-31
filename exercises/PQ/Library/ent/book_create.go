@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"excercise-library/ent/book"
+	"excercise-library/ent/material"
 	"fmt"
 
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
@@ -29,6 +30,25 @@ func (bc *BookCreate) SetAuthorName(s string) *BookCreate {
 func (bc *BookCreate) SetGenre(s string) *BookCreate {
 	bc.mutation.SetGenre(s)
 	return bc
+}
+
+// SetRelatedMaterialID sets the relatedMaterial edge to Material by id.
+func (bc *BookCreate) SetRelatedMaterialID(id int) *BookCreate {
+	bc.mutation.SetRelatedMaterialID(id)
+	return bc
+}
+
+// SetNillableRelatedMaterialID sets the relatedMaterial edge to Material by id if the given value is not nil.
+func (bc *BookCreate) SetNillableRelatedMaterialID(id *int) *BookCreate {
+	if id != nil {
+		bc = bc.SetRelatedMaterialID(*id)
+	}
+	return bc
+}
+
+// SetRelatedMaterial sets the relatedMaterial edge to Material.
+func (bc *BookCreate) SetRelatedMaterial(m *Material) *BookCreate {
+	return bc.SetRelatedMaterialID(m.ID)
 }
 
 // Mutation returns the BookMutation object of the builder.
@@ -126,6 +146,25 @@ func (bc *BookCreate) createSpec() (*Book, *sqlgraph.CreateSpec) {
 			Column: book.FieldGenre,
 		})
 		b.Genre = value
+	}
+	if nodes := bc.mutation.RelatedMaterialIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   book.RelatedMaterialTable,
+			Columns: []string{book.RelatedMaterialColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: material.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return b, _spec
 }

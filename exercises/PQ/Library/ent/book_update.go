@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"excercise-library/ent/book"
+	"excercise-library/ent/material"
 	"excercise-library/ent/predicate"
 	"fmt"
 
@@ -39,13 +40,39 @@ func (bu *BookUpdate) SetGenre(s string) *BookUpdate {
 	return bu
 }
 
+// SetRelatedMaterialID sets the relatedMaterial edge to Material by id.
+func (bu *BookUpdate) SetRelatedMaterialID(id int) *BookUpdate {
+	bu.mutation.SetRelatedMaterialID(id)
+	return bu
+}
+
+// SetNillableRelatedMaterialID sets the relatedMaterial edge to Material by id if the given value is not nil.
+func (bu *BookUpdate) SetNillableRelatedMaterialID(id *int) *BookUpdate {
+	if id != nil {
+		bu = bu.SetRelatedMaterialID(*id)
+	}
+	return bu
+}
+
+// SetRelatedMaterial sets the relatedMaterial edge to Material.
+func (bu *BookUpdate) SetRelatedMaterial(m *Material) *BookUpdate {
+	return bu.SetRelatedMaterialID(m.ID)
+}
+
 // Mutation returns the BookMutation object of the builder.
 func (bu *BookUpdate) Mutation() *BookMutation {
 	return bu.mutation
 }
 
+// ClearRelatedMaterial clears the relatedMaterial edge to Material.
+func (bu *BookUpdate) ClearRelatedMaterial() *BookUpdate {
+	bu.mutation.ClearRelatedMaterial()
+	return bu
+}
+
 // Save executes the query and returns the number of rows/vertices matched by this operation.
 func (bu *BookUpdate) Save(ctx context.Context) (int, error) {
+
 	var (
 		err      error
 		affected int
@@ -127,6 +154,41 @@ func (bu *BookUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: book.FieldGenre,
 		})
 	}
+	if bu.mutation.RelatedMaterialCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   book.RelatedMaterialTable,
+			Columns: []string{book.RelatedMaterialColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: material.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := bu.mutation.RelatedMaterialIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   book.RelatedMaterialTable,
+			Columns: []string{book.RelatedMaterialColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: material.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, bu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{book.Label}
@@ -157,13 +219,39 @@ func (buo *BookUpdateOne) SetGenre(s string) *BookUpdateOne {
 	return buo
 }
 
+// SetRelatedMaterialID sets the relatedMaterial edge to Material by id.
+func (buo *BookUpdateOne) SetRelatedMaterialID(id int) *BookUpdateOne {
+	buo.mutation.SetRelatedMaterialID(id)
+	return buo
+}
+
+// SetNillableRelatedMaterialID sets the relatedMaterial edge to Material by id if the given value is not nil.
+func (buo *BookUpdateOne) SetNillableRelatedMaterialID(id *int) *BookUpdateOne {
+	if id != nil {
+		buo = buo.SetRelatedMaterialID(*id)
+	}
+	return buo
+}
+
+// SetRelatedMaterial sets the relatedMaterial edge to Material.
+func (buo *BookUpdateOne) SetRelatedMaterial(m *Material) *BookUpdateOne {
+	return buo.SetRelatedMaterialID(m.ID)
+}
+
 // Mutation returns the BookMutation object of the builder.
 func (buo *BookUpdateOne) Mutation() *BookMutation {
 	return buo.mutation
 }
 
+// ClearRelatedMaterial clears the relatedMaterial edge to Material.
+func (buo *BookUpdateOne) ClearRelatedMaterial() *BookUpdateOne {
+	buo.mutation.ClearRelatedMaterial()
+	return buo
+}
+
 // Save executes the query and returns the updated entity.
 func (buo *BookUpdateOne) Save(ctx context.Context) (*Book, error) {
+
 	var (
 		err  error
 		node *Book
@@ -242,6 +330,41 @@ func (buo *BookUpdateOne) sqlSave(ctx context.Context) (b *Book, err error) {
 			Value:  value,
 			Column: book.FieldGenre,
 		})
+	}
+	if buo.mutation.RelatedMaterialCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   book.RelatedMaterialTable,
+			Columns: []string{book.RelatedMaterialColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: material.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := buo.mutation.RelatedMaterialIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   book.RelatedMaterialTable,
+			Columns: []string{book.RelatedMaterialColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: material.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	b = &Book{config: buo.config}
 	_spec.Assign = b.assignValues

@@ -27,16 +27,14 @@ func (Magazine) Fields() []ent.Field {
 // Edges of the Magazine.
 func (Magazine) Edges() []ent.Edge {
 	return []ent.Edge{
-		/*
-			// Create an inverse-edge called "relatedMaterial" of type `Material`
-			// and reference it to the "Material" edge (in Material schema)
-			// explicitly using the `Ref` method.
-			edge.From("relatedMaterial", Material.Type).
-				Ref("Material").
-				// setting the edge to unique, ensure
-				// that a magazine can have only one material.
-				Unique(),
-		*/
+		// Create an inverse-edge called "relatedMaterial" of type `Material`
+		// and reference it to the "Material" edge (in Material schema)
+		// explicitly using the `Ref` method.
+		edge.From("relatedMaterial", Material.Type).
+			Ref("Magazine").
+			// setting the edge to unique, ensure
+			// that a book can have only one material.
+			Unique(),
 		edge.To("Section", Section.Type),
 	}
 }

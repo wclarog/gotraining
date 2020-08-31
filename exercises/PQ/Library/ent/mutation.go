@@ -36,14 +36,16 @@ const (
 // nodes in the graph.
 type BookMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	authorName    *string
-	genre         *string
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*Book, error)
+	op                     Op
+	typ                    string
+	id                     *int
+	authorName             *string
+	genre                  *string
+	clearedFields          map[string]struct{}
+	relatedMaterial        *int
+	clearedrelatedMaterial bool
+	done                   bool
+	oldValue               func(context.Context) (*Book, error)
 }
 
 var _ ent.Mutation = (*BookMutation)(nil)
@@ -199,6 +201,45 @@ func (m *BookMutation) ResetGenre() {
 	m.genre = nil
 }
 
+// SetRelatedMaterialID sets the relatedMaterial edge to Material by id.
+func (m *BookMutation) SetRelatedMaterialID(id int) {
+	m.relatedMaterial = &id
+}
+
+// ClearRelatedMaterial clears the relatedMaterial edge to Material.
+func (m *BookMutation) ClearRelatedMaterial() {
+	m.clearedrelatedMaterial = true
+}
+
+// RelatedMaterialCleared returns if the edge relatedMaterial was cleared.
+func (m *BookMutation) RelatedMaterialCleared() bool {
+	return m.clearedrelatedMaterial
+}
+
+// RelatedMaterialID returns the relatedMaterial id in the mutation.
+func (m *BookMutation) RelatedMaterialID() (id int, exists bool) {
+	if m.relatedMaterial != nil {
+		return *m.relatedMaterial, true
+	}
+	return
+}
+
+// RelatedMaterialIDs returns the relatedMaterial ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// RelatedMaterialID instead. It exists only for internal usage by the builders.
+func (m *BookMutation) RelatedMaterialIDs() (ids []int) {
+	if id := m.relatedMaterial; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetRelatedMaterial reset all changes of the "relatedMaterial" edge.
+func (m *BookMutation) ResetRelatedMaterial() {
+	m.relatedMaterial = nil
+	m.clearedrelatedMaterial = false
+}
+
 // Op returns the operation name.
 func (m *BookMutation) Op() Op {
 	return m.op
@@ -331,45 +372,68 @@ func (m *BookMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *BookMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.relatedMaterial != nil {
+		edges = append(edges, book.EdgeRelatedMaterial)
+	}
 	return edges
 }
 
 // AddedIDs returns all ids (to other nodes) that were added for
 // the given edge name.
 func (m *BookMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case book.EdgeRelatedMaterial:
+		if id := m.relatedMaterial; id != nil {
+			return []ent.Value{*id}
+		}
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *BookMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
 	return edges
 }
 
 // RemovedIDs returns all ids (to other nodes) that were removed for
 // the given edge name.
 func (m *BookMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *BookMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedrelatedMaterial {
+		edges = append(edges, book.EdgeRelatedMaterial)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean indicates if this edge was
 // cleared in this mutation.
 func (m *BookMutation) EdgeCleared(name string) bool {
+	switch name {
+	case book.EdgeRelatedMaterial:
+		return m.clearedrelatedMaterial
+	}
 	return false
 }
 
 // ClearEdge clears the value for the given name. It returns an
 // error if the edge name is not defined in the schema.
 func (m *BookMutation) ClearEdge(name string) error {
+	switch name {
+	case book.EdgeRelatedMaterial:
+		m.ClearRelatedMaterial()
+		return nil
+	}
 	return fmt.Errorf("unknown Book unique edge %s", name)
 }
 
@@ -377,6 +441,11 @@ func (m *BookMutation) ClearEdge(name string) error {
 // given edge name. It returns an error if the edge is not
 // defined in the schema.
 func (m *BookMutation) ResetEdge(name string) error {
+	switch name {
+	case book.EdgeRelatedMaterial:
+		m.ResetRelatedMaterial()
+		return nil
+	}
 	return fmt.Errorf("unknown Book edge %s", name)
 }
 
@@ -384,15 +453,17 @@ func (m *BookMutation) ResetEdge(name string) error {
 // nodes in the graph.
 type MagazineMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *int
-	url             *string
-	clearedFields   map[string]struct{}
-	_Section        map[int]struct{}
-	removed_Section map[int]struct{}
-	done            bool
-	oldValue        func(context.Context) (*Magazine, error)
+	op                     Op
+	typ                    string
+	id                     *int
+	url                    *string
+	clearedFields          map[string]struct{}
+	relatedMaterial        *int
+	clearedrelatedMaterial bool
+	_Section               map[int]struct{}
+	removed_Section        map[int]struct{}
+	done                   bool
+	oldValue               func(context.Context) (*Magazine, error)
 }
 
 var _ ent.Mutation = (*MagazineMutation)(nil)
@@ -509,6 +580,45 @@ func (m *MagazineMutation) OldURL(ctx context.Context) (v string, err error) {
 // ResetURL reset all changes of the "url" field.
 func (m *MagazineMutation) ResetURL() {
 	m.url = nil
+}
+
+// SetRelatedMaterialID sets the relatedMaterial edge to Material by id.
+func (m *MagazineMutation) SetRelatedMaterialID(id int) {
+	m.relatedMaterial = &id
+}
+
+// ClearRelatedMaterial clears the relatedMaterial edge to Material.
+func (m *MagazineMutation) ClearRelatedMaterial() {
+	m.clearedrelatedMaterial = true
+}
+
+// RelatedMaterialCleared returns if the edge relatedMaterial was cleared.
+func (m *MagazineMutation) RelatedMaterialCleared() bool {
+	return m.clearedrelatedMaterial
+}
+
+// RelatedMaterialID returns the relatedMaterial id in the mutation.
+func (m *MagazineMutation) RelatedMaterialID() (id int, exists bool) {
+	if m.relatedMaterial != nil {
+		return *m.relatedMaterial, true
+	}
+	return
+}
+
+// RelatedMaterialIDs returns the relatedMaterial ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// RelatedMaterialID instead. It exists only for internal usage by the builders.
+func (m *MagazineMutation) RelatedMaterialIDs() (ids []int) {
+	if id := m.relatedMaterial; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetRelatedMaterial reset all changes of the "relatedMaterial" edge.
+func (m *MagazineMutation) ResetRelatedMaterial() {
+	m.relatedMaterial = nil
+	m.clearedrelatedMaterial = false
 }
 
 // AddSectionIDs adds the Section edge to Section by ids.
@@ -668,7 +778,10 @@ func (m *MagazineMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *MagazineMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.relatedMaterial != nil {
+		edges = append(edges, magazine.EdgeRelatedMaterial)
+	}
 	if m._Section != nil {
 		edges = append(edges, magazine.EdgeSection)
 	}
@@ -679,6 +792,10 @@ func (m *MagazineMutation) AddedEdges() []string {
 // the given edge name.
 func (m *MagazineMutation) AddedIDs(name string) []ent.Value {
 	switch name {
+	case magazine.EdgeRelatedMaterial:
+		if id := m.relatedMaterial; id != nil {
+			return []ent.Value{*id}
+		}
 	case magazine.EdgeSection:
 		ids := make([]ent.Value, 0, len(m._Section))
 		for id := range m._Section {
@@ -692,7 +809,7 @@ func (m *MagazineMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *MagazineMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removed_Section != nil {
 		edges = append(edges, magazine.EdgeSection)
 	}
@@ -716,7 +833,10 @@ func (m *MagazineMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *MagazineMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.clearedrelatedMaterial {
+		edges = append(edges, magazine.EdgeRelatedMaterial)
+	}
 	return edges
 }
 
@@ -724,6 +844,8 @@ func (m *MagazineMutation) ClearedEdges() []string {
 // cleared in this mutation.
 func (m *MagazineMutation) EdgeCleared(name string) bool {
 	switch name {
+	case magazine.EdgeRelatedMaterial:
+		return m.clearedrelatedMaterial
 	}
 	return false
 }
@@ -732,6 +854,9 @@ func (m *MagazineMutation) EdgeCleared(name string) bool {
 // error if the edge name is not defined in the schema.
 func (m *MagazineMutation) ClearEdge(name string) error {
 	switch name {
+	case magazine.EdgeRelatedMaterial:
+		m.ClearRelatedMaterial()
+		return nil
 	}
 	return fmt.Errorf("unknown Magazine unique edge %s", name)
 }
@@ -741,6 +866,9 @@ func (m *MagazineMutation) ClearEdge(name string) error {
 // defined in the schema.
 func (m *MagazineMutation) ResetEdge(name string) error {
 	switch name {
+	case magazine.EdgeRelatedMaterial:
+		m.ResetRelatedMaterial()
+		return nil
 	case magazine.EdgeSection:
 		m.ResetSection()
 		return nil
@@ -758,8 +886,8 @@ type MaterialMutation struct {
 	uniqueCode        *string
 	name              *string
 	dateOfEmission    *time.Time
-	numberOfPages     *int
-	addnumberOfPages  *int
+	numberOfPages     *uint
+	addnumberOfPages  *uint
 	materialType      *int
 	addmaterialType   *int
 	clearedFields     map[string]struct{}
@@ -964,13 +1092,13 @@ func (m *MaterialMutation) ResetDateOfEmission() {
 }
 
 // SetNumberOfPages sets the numberOfPages field.
-func (m *MaterialMutation) SetNumberOfPages(i int) {
-	m.numberOfPages = &i
+func (m *MaterialMutation) SetNumberOfPages(u uint) {
+	m.numberOfPages = &u
 	m.addnumberOfPages = nil
 }
 
 // NumberOfPages returns the numberOfPages value in the mutation.
-func (m *MaterialMutation) NumberOfPages() (r int, exists bool) {
+func (m *MaterialMutation) NumberOfPages() (r uint, exists bool) {
 	v := m.numberOfPages
 	if v == nil {
 		return
@@ -982,7 +1110,7 @@ func (m *MaterialMutation) NumberOfPages() (r int, exists bool) {
 // If the Material object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *MaterialMutation) OldNumberOfPages(ctx context.Context) (v int, err error) {
+func (m *MaterialMutation) OldNumberOfPages(ctx context.Context) (v uint, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldNumberOfPages is allowed only on UpdateOne operations")
 	}
@@ -996,17 +1124,17 @@ func (m *MaterialMutation) OldNumberOfPages(ctx context.Context) (v int, err err
 	return oldValue.NumberOfPages, nil
 }
 
-// AddNumberOfPages adds i to numberOfPages.
-func (m *MaterialMutation) AddNumberOfPages(i int) {
+// AddNumberOfPages adds u to numberOfPages.
+func (m *MaterialMutation) AddNumberOfPages(u uint) {
 	if m.addnumberOfPages != nil {
-		*m.addnumberOfPages += i
+		*m.addnumberOfPages += u
 	} else {
-		m.addnumberOfPages = &i
+		m.addnumberOfPages = &u
 	}
 }
 
 // AddedNumberOfPages returns the value that was added to the numberOfPages field in this mutation.
-func (m *MaterialMutation) AddedNumberOfPages() (r int, exists bool) {
+func (m *MaterialMutation) AddedNumberOfPages() (r uint, exists bool) {
 	v := m.addnumberOfPages
 	if v == nil {
 		return
@@ -1292,7 +1420,7 @@ func (m *MaterialMutation) SetField(name string, value ent.Value) error {
 		m.SetDateOfEmission(v)
 		return nil
 	case material.FieldNumberOfPages:
-		v, ok := value.(int)
+		v, ok := value.(uint)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -1341,7 +1469,7 @@ func (m *MaterialMutation) AddedField(name string) (ent.Value, bool) {
 func (m *MaterialMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	case material.FieldNumberOfPages:
-		v, ok := value.(int)
+		v, ok := value.(uint)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -1521,13 +1649,15 @@ func (m *MaterialMutation) ResetEdge(name string) error {
 // nodes in the graph.
 type NewspaperMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	url           *string
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*Newspaper, error)
+	op                     Op
+	typ                    string
+	id                     *int
+	url                    *string
+	clearedFields          map[string]struct{}
+	relatedMaterial        *int
+	clearedrelatedMaterial bool
+	done                   bool
+	oldValue               func(context.Context) (*Newspaper, error)
 }
 
 var _ ent.Mutation = (*NewspaperMutation)(nil)
@@ -1646,6 +1776,45 @@ func (m *NewspaperMutation) ResetURL() {
 	m.url = nil
 }
 
+// SetRelatedMaterialID sets the relatedMaterial edge to Material by id.
+func (m *NewspaperMutation) SetRelatedMaterialID(id int) {
+	m.relatedMaterial = &id
+}
+
+// ClearRelatedMaterial clears the relatedMaterial edge to Material.
+func (m *NewspaperMutation) ClearRelatedMaterial() {
+	m.clearedrelatedMaterial = true
+}
+
+// RelatedMaterialCleared returns if the edge relatedMaterial was cleared.
+func (m *NewspaperMutation) RelatedMaterialCleared() bool {
+	return m.clearedrelatedMaterial
+}
+
+// RelatedMaterialID returns the relatedMaterial id in the mutation.
+func (m *NewspaperMutation) RelatedMaterialID() (id int, exists bool) {
+	if m.relatedMaterial != nil {
+		return *m.relatedMaterial, true
+	}
+	return
+}
+
+// RelatedMaterialIDs returns the relatedMaterial ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// RelatedMaterialID instead. It exists only for internal usage by the builders.
+func (m *NewspaperMutation) RelatedMaterialIDs() (ids []int) {
+	if id := m.relatedMaterial; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetRelatedMaterial reset all changes of the "relatedMaterial" edge.
+func (m *NewspaperMutation) ResetRelatedMaterial() {
+	m.relatedMaterial = nil
+	m.clearedrelatedMaterial = false
+}
+
 // Op returns the operation name.
 func (m *NewspaperMutation) Op() Op {
 	return m.op
@@ -1761,45 +1930,68 @@ func (m *NewspaperMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *NewspaperMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.relatedMaterial != nil {
+		edges = append(edges, newspaper.EdgeRelatedMaterial)
+	}
 	return edges
 }
 
 // AddedIDs returns all ids (to other nodes) that were added for
 // the given edge name.
 func (m *NewspaperMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case newspaper.EdgeRelatedMaterial:
+		if id := m.relatedMaterial; id != nil {
+			return []ent.Value{*id}
+		}
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *NewspaperMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
 	return edges
 }
 
 // RemovedIDs returns all ids (to other nodes) that were removed for
 // the given edge name.
 func (m *NewspaperMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *NewspaperMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedrelatedMaterial {
+		edges = append(edges, newspaper.EdgeRelatedMaterial)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean indicates if this edge was
 // cleared in this mutation.
 func (m *NewspaperMutation) EdgeCleared(name string) bool {
+	switch name {
+	case newspaper.EdgeRelatedMaterial:
+		return m.clearedrelatedMaterial
+	}
 	return false
 }
 
 // ClearEdge clears the value for the given name. It returns an
 // error if the edge name is not defined in the schema.
 func (m *NewspaperMutation) ClearEdge(name string) error {
+	switch name {
+	case newspaper.EdgeRelatedMaterial:
+		m.ClearRelatedMaterial()
+		return nil
+	}
 	return fmt.Errorf("unknown Newspaper unique edge %s", name)
 }
 
@@ -1807,6 +1999,11 @@ func (m *NewspaperMutation) ClearEdge(name string) error {
 // given edge name. It returns an error if the edge is not
 // defined in the schema.
 func (m *NewspaperMutation) ResetEdge(name string) error {
+	switch name {
+	case newspaper.EdgeRelatedMaterial:
+		m.ResetRelatedMaterial()
+		return nil
+	}
 	return fmt.Errorf("unknown Newspaper edge %s", name)
 }
 

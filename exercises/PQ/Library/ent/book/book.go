@@ -12,8 +12,18 @@ const (
 	// FieldGenre holds the string denoting the genre field in the database.
 	FieldGenre = "genre"
 
+	// EdgeRelatedMaterial holds the string denoting the relatedmaterial edge name in mutations.
+	EdgeRelatedMaterial = "relatedMaterial"
+
 	// Table holds the table name of the book in the database.
 	Table = "Book"
+	// RelatedMaterialTable is the table the holds the relatedMaterial relation/edge.
+	RelatedMaterialTable = "Book"
+	// RelatedMaterialInverseTable is the table name for the Material entity.
+	// It exists in this package in order to avoid circular dependency with the "material" package.
+	RelatedMaterialInverseTable = "Material"
+	// RelatedMaterialColumn is the table column denoting the relatedMaterial relation/edge.
+	RelatedMaterialColumn = "material_id"
 )
 
 // Columns holds all SQL columns for book fields.
@@ -21,4 +31,9 @@ var Columns = []string{
 	FieldID,
 	FieldAuthorName,
 	FieldGenre,
+}
+
+// ForeignKeys holds the SQL foreign-keys that are owned by the Book type.
+var ForeignKeys = []string{
+	"material_id",
 }

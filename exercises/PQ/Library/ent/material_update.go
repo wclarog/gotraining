@@ -31,6 +31,12 @@ func (mu *MaterialUpdate) Where(ps ...predicate.Material) *MaterialUpdate {
 	return mu
 }
 
+// SetUniqueCode sets the uniqueCode field.
+func (mu *MaterialUpdate) SetUniqueCode(s string) *MaterialUpdate {
+	mu.mutation.SetUniqueCode(s)
+	return mu
+}
+
 // SetName sets the name field.
 func (mu *MaterialUpdate) SetName(s string) *MaterialUpdate {
 	mu.mutation.SetName(s)
@@ -44,15 +50,15 @@ func (mu *MaterialUpdate) SetDateOfEmission(t time.Time) *MaterialUpdate {
 }
 
 // SetNumberOfPages sets the numberOfPages field.
-func (mu *MaterialUpdate) SetNumberOfPages(i int) *MaterialUpdate {
+func (mu *MaterialUpdate) SetNumberOfPages(u uint) *MaterialUpdate {
 	mu.mutation.ResetNumberOfPages()
-	mu.mutation.SetNumberOfPages(i)
+	mu.mutation.SetNumberOfPages(u)
 	return mu
 }
 
-// AddNumberOfPages adds i to numberOfPages.
-func (mu *MaterialUpdate) AddNumberOfPages(i int) *MaterialUpdate {
-	mu.mutation.AddNumberOfPages(i)
+// AddNumberOfPages adds u to numberOfPages.
+func (mu *MaterialUpdate) AddNumberOfPages(u uint) *MaterialUpdate {
+	mu.mutation.AddNumberOfPages(u)
 	return mu
 }
 
@@ -151,11 +157,6 @@ func (mu *MaterialUpdate) ClearMagazine() *MaterialUpdate {
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
 func (mu *MaterialUpdate) Save(ctx context.Context) (int, error) {
-	if v, ok := mu.mutation.NumberOfPages(); ok {
-		if err := material.NumberOfPagesValidator(v); err != nil {
-			return 0, &ValidationError{Name: "numberOfPages", err: fmt.Errorf("ent: validator failed for field \"numberOfPages\": %w", err)}
-		}
-	}
 	if v, ok := mu.mutation.MaterialType(); ok {
 		if err := material.MaterialTypeValidator(v); err != nil {
 			return 0, &ValidationError{Name: "materialType", err: fmt.Errorf("ent: validator failed for field \"materialType\": %w", err)}
@@ -229,6 +230,13 @@ func (mu *MaterialUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if value, ok := mu.mutation.UniqueCode(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: material.FieldUniqueCode,
+		})
+	}
 	if value, ok := mu.mutation.Name(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -245,14 +253,14 @@ func (mu *MaterialUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := mu.mutation.NumberOfPages(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
+			Type:   field.TypeUint,
 			Value:  value,
 			Column: material.FieldNumberOfPages,
 		})
 	}
 	if value, ok := mu.mutation.AddedNumberOfPages(); ok {
 		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
+			Type:   field.TypeUint,
 			Value:  value,
 			Column: material.FieldNumberOfPages,
 		})
@@ -273,7 +281,7 @@ func (mu *MaterialUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if mu.mutation.BookCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   material.BookTable,
 			Columns: []string{material.BookColumn},
@@ -289,7 +297,7 @@ func (mu *MaterialUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if nodes := mu.mutation.BookIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   material.BookTable,
 			Columns: []string{material.BookColumn},
@@ -308,7 +316,7 @@ func (mu *MaterialUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if mu.mutation.NewspaperCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   material.NewspaperTable,
 			Columns: []string{material.NewspaperColumn},
@@ -324,7 +332,7 @@ func (mu *MaterialUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if nodes := mu.mutation.NewspaperIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   material.NewspaperTable,
 			Columns: []string{material.NewspaperColumn},
@@ -343,7 +351,7 @@ func (mu *MaterialUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if mu.mutation.MagazineCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   material.MagazineTable,
 			Columns: []string{material.MagazineColumn},
@@ -359,7 +367,7 @@ func (mu *MaterialUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if nodes := mu.mutation.MagazineIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   material.MagazineTable,
 			Columns: []string{material.MagazineColumn},
@@ -394,6 +402,12 @@ type MaterialUpdateOne struct {
 	mutation *MaterialMutation
 }
 
+// SetUniqueCode sets the uniqueCode field.
+func (muo *MaterialUpdateOne) SetUniqueCode(s string) *MaterialUpdateOne {
+	muo.mutation.SetUniqueCode(s)
+	return muo
+}
+
 // SetName sets the name field.
 func (muo *MaterialUpdateOne) SetName(s string) *MaterialUpdateOne {
 	muo.mutation.SetName(s)
@@ -407,15 +421,15 @@ func (muo *MaterialUpdateOne) SetDateOfEmission(t time.Time) *MaterialUpdateOne 
 }
 
 // SetNumberOfPages sets the numberOfPages field.
-func (muo *MaterialUpdateOne) SetNumberOfPages(i int) *MaterialUpdateOne {
+func (muo *MaterialUpdateOne) SetNumberOfPages(u uint) *MaterialUpdateOne {
 	muo.mutation.ResetNumberOfPages()
-	muo.mutation.SetNumberOfPages(i)
+	muo.mutation.SetNumberOfPages(u)
 	return muo
 }
 
-// AddNumberOfPages adds i to numberOfPages.
-func (muo *MaterialUpdateOne) AddNumberOfPages(i int) *MaterialUpdateOne {
-	muo.mutation.AddNumberOfPages(i)
+// AddNumberOfPages adds u to numberOfPages.
+func (muo *MaterialUpdateOne) AddNumberOfPages(u uint) *MaterialUpdateOne {
+	muo.mutation.AddNumberOfPages(u)
 	return muo
 }
 
@@ -514,11 +528,6 @@ func (muo *MaterialUpdateOne) ClearMagazine() *MaterialUpdateOne {
 
 // Save executes the query and returns the updated entity.
 func (muo *MaterialUpdateOne) Save(ctx context.Context) (*Material, error) {
-	if v, ok := muo.mutation.NumberOfPages(); ok {
-		if err := material.NumberOfPagesValidator(v); err != nil {
-			return nil, &ValidationError{Name: "numberOfPages", err: fmt.Errorf("ent: validator failed for field \"numberOfPages\": %w", err)}
-		}
-	}
 	if v, ok := muo.mutation.MaterialType(); ok {
 		if err := material.MaterialTypeValidator(v); err != nil {
 			return nil, &ValidationError{Name: "materialType", err: fmt.Errorf("ent: validator failed for field \"materialType\": %w", err)}
@@ -590,6 +599,13 @@ func (muo *MaterialUpdateOne) sqlSave(ctx context.Context) (m *Material, err err
 		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing Material.ID for update")}
 	}
 	_spec.Node.ID.Value = id
+	if value, ok := muo.mutation.UniqueCode(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: material.FieldUniqueCode,
+		})
+	}
 	if value, ok := muo.mutation.Name(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -606,14 +622,14 @@ func (muo *MaterialUpdateOne) sqlSave(ctx context.Context) (m *Material, err err
 	}
 	if value, ok := muo.mutation.NumberOfPages(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
+			Type:   field.TypeUint,
 			Value:  value,
 			Column: material.FieldNumberOfPages,
 		})
 	}
 	if value, ok := muo.mutation.AddedNumberOfPages(); ok {
 		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
+			Type:   field.TypeUint,
 			Value:  value,
 			Column: material.FieldNumberOfPages,
 		})
@@ -634,7 +650,7 @@ func (muo *MaterialUpdateOne) sqlSave(ctx context.Context) (m *Material, err err
 	}
 	if muo.mutation.BookCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   material.BookTable,
 			Columns: []string{material.BookColumn},
@@ -650,7 +666,7 @@ func (muo *MaterialUpdateOne) sqlSave(ctx context.Context) (m *Material, err err
 	}
 	if nodes := muo.mutation.BookIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   material.BookTable,
 			Columns: []string{material.BookColumn},
@@ -669,7 +685,7 @@ func (muo *MaterialUpdateOne) sqlSave(ctx context.Context) (m *Material, err err
 	}
 	if muo.mutation.NewspaperCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   material.NewspaperTable,
 			Columns: []string{material.NewspaperColumn},
@@ -685,7 +701,7 @@ func (muo *MaterialUpdateOne) sqlSave(ctx context.Context) (m *Material, err err
 	}
 	if nodes := muo.mutation.NewspaperIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   material.NewspaperTable,
 			Columns: []string{material.NewspaperColumn},
@@ -704,7 +720,7 @@ func (muo *MaterialUpdateOne) sqlSave(ctx context.Context) (m *Material, err err
 	}
 	if muo.mutation.MagazineCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   material.MagazineTable,
 			Columns: []string{material.MagazineColumn},
@@ -720,7 +736,7 @@ func (muo *MaterialUpdateOne) sqlSave(ctx context.Context) (m *Material, err err
 	}
 	if nodes := muo.mutation.MagazineIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   material.MagazineTable,
 			Columns: []string{material.MagazineColumn},

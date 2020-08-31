@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"excercise-library/ent/book"
+	"excercise-library/ent/material"
 	"excercise-library/ent/predicate"
 	"fmt"
 	"math"
@@ -23,6 +24,9 @@ type BookQuery struct {
 	order      []OrderFunc
 	unique     []string
 	predicates []predicate.Book
+	// eager-loading edges.
+	withRelatedMaterial *MaterialQuery
+	withFKs             bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -50,6 +54,24 @@ func (bq *BookQuery) Offset(offset int) *BookQuery {
 func (bq *BookQuery) Order(o ...OrderFunc) *BookQuery {
 	bq.order = append(bq.order, o...)
 	return bq
+}
+
+// QueryRelatedMaterial chains the current query on the relatedMaterial edge.
+func (bq *BookQuery) QueryRelatedMaterial() *MaterialQuery {
+	query := &MaterialQuery{config: bq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := bq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(book.Table, book.FieldID, bq.sqlQuery()),
+			sqlgraph.To(material.Table, material.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, book.RelatedMaterialTable, book.RelatedMaterialColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Book entity in the query. Returns *NotFoundError when no book was found.
@@ -231,6 +253,17 @@ func (bq *BookQuery) Clone() *BookQuery {
 	}
 }
 
+//  WithRelatedMaterial tells the query-builder to eager-loads the nodes that are connected to
+// the "relatedMaterial" edge. The optional arguments used to configure the query builder of the edge.
+func (bq *BookQuery) WithRelatedMaterial(opts ...func(*MaterialQuery)) *BookQuery {
+	query := &MaterialQuery{config: bq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	bq.withRelatedMaterial = query
+	return bq
+}
+
 // GroupBy used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -295,13 +328,26 @@ func (bq *BookQuery) prepareQuery(ctx context.Context) error {
 
 func (bq *BookQuery) sqlAll(ctx context.Context) ([]*Book, error) {
 	var (
-		nodes = []*Book{}
-		_spec = bq.querySpec()
+		nodes       = []*Book{}
+		withFKs     = bq.withFKs
+		_spec       = bq.querySpec()
+		loadedTypes = [1]bool{
+			bq.withRelatedMaterial != nil,
+		}
 	)
+	if bq.withRelatedMaterial != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, book.ForeignKeys...)
+	}
 	_spec.ScanValues = func() []interface{} {
 		node := &Book{config: bq.config}
 		nodes = append(nodes, node)
 		values := node.scanValues()
+		if withFKs {
+			values = append(values, node.fkValues()...)
+		}
 		return values
 	}
 	_spec.Assign = func(values ...interface{}) error {
@@ -309,6 +355,7 @@ func (bq *BookQuery) sqlAll(ctx context.Context) ([]*Book, error) {
 			return fmt.Errorf("ent: Assign called without calling ScanValues")
 		}
 		node := nodes[len(nodes)-1]
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(values...)
 	}
 	if err := sqlgraph.QueryNodes(ctx, bq.driver, _spec); err != nil {
@@ -317,6 +364,32 @@ func (bq *BookQuery) sqlAll(ctx context.Context) ([]*Book, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+
+	if query := bq.withRelatedMaterial; query != nil {
+		ids := make([]int, 0, len(nodes))
+		nodeids := make(map[int][]*Book)
+		for i := range nodes {
+			if fk := nodes[i].material_id; fk != nil {
+				ids = append(ids, *fk)
+				nodeids[*fk] = append(nodeids[*fk], nodes[i])
+			}
+		}
+		query.Where(material.IDIn(ids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := nodeids[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "material_id" returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.RelatedMaterial = n
+			}
+		}
+	}
+
 	return nodes, nil
 }
 

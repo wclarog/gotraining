@@ -26,15 +26,12 @@ type Material struct {
 	// DateOfEmission holds the value of the "dateOfEmission" field.
 	DateOfEmission time.Time `json:"dateOfEmission,omitempty"`
 	// NumberOfPages holds the value of the "numberOfPages" field.
-	NumberOfPages int `json:"numberOfPages,omitempty"`
+	NumberOfPages uint `json:"numberOfPages,omitempty"`
 	// MaterialType holds the value of the "materialType" field.
 	MaterialType int `json:"materialType,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the MaterialQuery when eager-loading is set.
-	Edges              MaterialEdges `json:"edges"`
-	material_book      *int
-	material_newspaper *int
-	material_magazine  *int
+	Edges MaterialEdges `json:"edges"`
 }
 
 // MaterialEdges holds the relations/edges for other nodes in the graph.
@@ -104,15 +101,6 @@ func (*Material) scanValues() []interface{} {
 	}
 }
 
-// fkValues returns the types for scanning foreign-keys values from sql.Rows.
-func (*Material) fkValues() []interface{} {
-	return []interface{}{
-		&sql.NullInt64{}, // material_book
-		&sql.NullInt64{}, // material_newspaper
-		&sql.NullInt64{}, // material_magazine
-	}
-}
-
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Material fields.
 func (m *Material) assignValues(values ...interface{}) error {
@@ -143,33 +131,12 @@ func (m *Material) assignValues(values ...interface{}) error {
 	if value, ok := values[3].(*sql.NullInt64); !ok {
 		return fmt.Errorf("unexpected type %T for field numberOfPages", values[3])
 	} else if value.Valid {
-		m.NumberOfPages = int(value.Int64)
+		m.NumberOfPages = uint(value.Int64)
 	}
 	if value, ok := values[4].(*sql.NullInt64); !ok {
 		return fmt.Errorf("unexpected type %T for field materialType", values[4])
 	} else if value.Valid {
 		m.MaterialType = int(value.Int64)
-	}
-	values = values[5:]
-	if len(values) == len(material.ForeignKeys) {
-		if value, ok := values[0].(*sql.NullInt64); !ok {
-			return fmt.Errorf("unexpected type %T for edge-field material_book", value)
-		} else if value.Valid {
-			m.material_book = new(int)
-			*m.material_book = int(value.Int64)
-		}
-		if value, ok := values[1].(*sql.NullInt64); !ok {
-			return fmt.Errorf("unexpected type %T for edge-field material_newspaper", value)
-		} else if value.Valid {
-			m.material_newspaper = new(int)
-			*m.material_newspaper = int(value.Int64)
-		}
-		if value, ok := values[2].(*sql.NullInt64); !ok {
-			return fmt.Errorf("unexpected type %T for edge-field material_magazine", value)
-		} else if value.Valid {
-			m.material_magazine = new(int)
-			*m.material_magazine = int(value.Int64)
-		}
 	}
 	return nil
 }

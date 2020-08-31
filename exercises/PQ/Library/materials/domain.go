@@ -15,7 +15,7 @@ type Material struct {
 	UniqueCode     string       `json:"uniqueCode"`
 	Name           string       `json:"name"`
 	DateOfEmission time.Time    `json:"dateOfEmission"`
-	NumberOfPages  int          `json:"numberOfPages"`
+	NumberOfPages  uint         `json:"numberOfPages"`
 	MaterialType   MaterialType `json:"materialType"`
 }
 
@@ -46,7 +46,7 @@ type DTOMaterial struct {
 	UniqueCode     string
 	Name           string
 	DateOfEmission time.Time
-	NumberOfPages  int
+	NumberOfPages  uint
 	MaterialType   MaterialType
 }
 

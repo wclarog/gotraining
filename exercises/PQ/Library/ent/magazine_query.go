@@ -7,6 +7,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"excercise-library/ent/magazine"
+	"excercise-library/ent/material"
 	"excercise-library/ent/predicate"
 	"excercise-library/ent/section"
 	"fmt"
@@ -26,7 +27,9 @@ type MagazineQuery struct {
 	unique     []string
 	predicates []predicate.Magazine
 	// eager-loading edges.
-	withSection *SectionQuery
+	withRelatedMaterial *MaterialQuery
+	withSection         *SectionQuery
+	withFKs             bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -54,6 +57,24 @@ func (mq *MagazineQuery) Offset(offset int) *MagazineQuery {
 func (mq *MagazineQuery) Order(o ...OrderFunc) *MagazineQuery {
 	mq.order = append(mq.order, o...)
 	return mq
+}
+
+// QueryRelatedMaterial chains the current query on the relatedMaterial edge.
+func (mq *MagazineQuery) QueryRelatedMaterial() *MaterialQuery {
+	query := &MaterialQuery{config: mq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := mq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(magazine.Table, magazine.FieldID, mq.sqlQuery()),
+			sqlgraph.To(material.Table, material.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, magazine.RelatedMaterialTable, magazine.RelatedMaterialColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QuerySection chains the current query on the Section edge.
@@ -253,6 +274,17 @@ func (mq *MagazineQuery) Clone() *MagazineQuery {
 	}
 }
 
+//  WithRelatedMaterial tells the query-builder to eager-loads the nodes that are connected to
+// the "relatedMaterial" edge. The optional arguments used to configure the query builder of the edge.
+func (mq *MagazineQuery) WithRelatedMaterial(opts ...func(*MaterialQuery)) *MagazineQuery {
+	query := &MaterialQuery{config: mq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	mq.withRelatedMaterial = query
+	return mq
+}
+
 //  WithSection tells the query-builder to eager-loads the nodes that are connected to
 // the "Section" edge. The optional arguments used to configure the query builder of the edge.
 func (mq *MagazineQuery) WithSection(opts ...func(*SectionQuery)) *MagazineQuery {
@@ -329,15 +361,26 @@ func (mq *MagazineQuery) prepareQuery(ctx context.Context) error {
 func (mq *MagazineQuery) sqlAll(ctx context.Context) ([]*Magazine, error) {
 	var (
 		nodes       = []*Magazine{}
+		withFKs     = mq.withFKs
 		_spec       = mq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
+			mq.withRelatedMaterial != nil,
 			mq.withSection != nil,
 		}
 	)
+	if mq.withRelatedMaterial != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, magazine.ForeignKeys...)
+	}
 	_spec.ScanValues = func() []interface{} {
 		node := &Magazine{config: mq.config}
 		nodes = append(nodes, node)
 		values := node.scanValues()
+		if withFKs {
+			values = append(values, node.fkValues()...)
+		}
 		return values
 	}
 	_spec.Assign = func(values ...interface{}) error {
@@ -353,6 +396,31 @@ func (mq *MagazineQuery) sqlAll(ctx context.Context) ([]*Magazine, error) {
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
+	}
+
+	if query := mq.withRelatedMaterial; query != nil {
+		ids := make([]int, 0, len(nodes))
+		nodeids := make(map[int][]*Magazine)
+		for i := range nodes {
+			if fk := nodes[i].material_id; fk != nil {
+				ids = append(ids, *fk)
+				nodeids[*fk] = append(nodeids[*fk], nodes[i])
+			}
+		}
+		query.Where(material.IDIn(ids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := nodeids[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "material_id" returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.RelatedMaterial = n
+			}
+		}
 	}
 
 	if query := mq.withSection; query != nil {

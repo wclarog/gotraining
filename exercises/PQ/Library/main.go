@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"excercise-library/config"
+	"excercise-library/ent"
 	"excercise-library/materials"
 	"flag"
 	"fmt"
@@ -11,7 +11,6 @@ import (
 	"github.com/go-kit/kit/log/level"
 	httptransport "github.com/go-kit/kit/transport/http"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/golang-sql/sqlexp"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,7 +18,6 @@ import (
 )
 
 func main() {
-
 	httpAddr := flag.String("http", ":"+config.Values.HTTP_PORT, "http listen address")
 
 	logger := log.NewLogfmtLogger(os.Stderr)
@@ -35,9 +33,21 @@ func main() {
 	}()
 
 	ctx := context.Background()
-	db, _ := sql.Open(sqlexp.DialectMySQL, config.Values.DB.DB_HOST)
 
-	repository := materials.NewRepository(db)
+	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",
+		config.DB.DB_USER,
+		config.DB.DB_PASS,
+		config.DB.DB_HOST,
+		config.DB.DB_PORT,
+		config.DB.DB_NAME)
+
+	client, errOpen := ent.Open("mysql", connectionString)
+	if errOpen != nil {
+		panic("database connection failed")
+	}
+	defer client.Close()
+
+	repository := materials.NewRepository(client)
 	srv := materials.NewService(repository, logger)
 	endpoints := materials.MakeEndpoints(srv)
 	//endpoints = materials.NewAuthMiddleware(endpoints)

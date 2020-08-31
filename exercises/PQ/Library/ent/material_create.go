@@ -42,8 +42,8 @@ func (mc *MaterialCreate) SetDateOfEmission(t time.Time) *MaterialCreate {
 }
 
 // SetNumberOfPages sets the numberOfPages field.
-func (mc *MaterialCreate) SetNumberOfPages(i int) *MaterialCreate {
-	mc.mutation.SetNumberOfPages(i)
+func (mc *MaterialCreate) SetNumberOfPages(u uint) *MaterialCreate {
+	mc.mutation.SetNumberOfPages(u)
 	return mc
 }
 
@@ -160,11 +160,6 @@ func (mc *MaterialCreate) preSave() error {
 	if _, ok := mc.mutation.UniqueCode(); !ok {
 		return &ValidationError{Name: "uniqueCode", err: errors.New("ent: missing required field \"uniqueCode\"")}
 	}
-	if v, ok := mc.mutation.UniqueCode(); ok {
-		if err := material.UniqueCodeValidator(v); err != nil {
-			return &ValidationError{Name: "uniqueCode", err: fmt.Errorf("ent: validator failed for field \"uniqueCode\": %w", err)}
-		}
-	}
 	if _, ok := mc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New("ent: missing required field \"name\"")}
 	}
@@ -173,11 +168,6 @@ func (mc *MaterialCreate) preSave() error {
 	}
 	if _, ok := mc.mutation.NumberOfPages(); !ok {
 		return &ValidationError{Name: "numberOfPages", err: errors.New("ent: missing required field \"numberOfPages\"")}
-	}
-	if v, ok := mc.mutation.NumberOfPages(); ok {
-		if err := material.NumberOfPagesValidator(v); err != nil {
-			return &ValidationError{Name: "numberOfPages", err: fmt.Errorf("ent: validator failed for field \"numberOfPages\": %w", err)}
-		}
 	}
 	if _, ok := mc.mutation.MaterialType(); !ok {
 		return &ValidationError{Name: "materialType", err: errors.New("ent: missing required field \"materialType\"")}
@@ -240,7 +230,7 @@ func (mc *MaterialCreate) createSpec() (*Material, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := mc.mutation.NumberOfPages(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt,
+			Type:   field.TypeUint,
 			Value:  value,
 			Column: material.FieldNumberOfPages,
 		})
@@ -256,7 +246,7 @@ func (mc *MaterialCreate) createSpec() (*Material, *sqlgraph.CreateSpec) {
 	}
 	if nodes := mc.mutation.BookIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   material.BookTable,
 			Columns: []string{material.BookColumn},
@@ -275,7 +265,7 @@ func (mc *MaterialCreate) createSpec() (*Material, *sqlgraph.CreateSpec) {
 	}
 	if nodes := mc.mutation.NewspaperIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   material.NewspaperTable,
 			Columns: []string{material.NewspaperColumn},
@@ -294,7 +284,7 @@ func (mc *MaterialCreate) createSpec() (*Material, *sqlgraph.CreateSpec) {
 	}
 	if nodes := mc.mutation.MagazineIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: false,
 			Table:   material.MagazineTable,
 			Columns: []string{material.MagazineColumn},

@@ -4,6 +4,7 @@ package ent
 
 import (
 	"excercise-library/ent/magazine"
+	"excercise-library/ent/material"
 	"fmt"
 	"strings"
 
@@ -19,22 +20,39 @@ type Magazine struct {
 	URL string `json:"url,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the MagazineQuery when eager-loading is set.
-	Edges MagazineEdges `json:"edges"`
+	Edges       MagazineEdges `json:"edges"`
+	material_id *int
 }
 
 // MagazineEdges holds the relations/edges for other nodes in the graph.
 type MagazineEdges struct {
+	// RelatedMaterial holds the value of the relatedMaterial edge.
+	RelatedMaterial *Material
 	// Section holds the value of the Section edge.
 	Section []*Section
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
+}
+
+// RelatedMaterialOrErr returns the RelatedMaterial value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e MagazineEdges) RelatedMaterialOrErr() (*Material, error) {
+	if e.loadedTypes[0] {
+		if e.RelatedMaterial == nil {
+			// The edge relatedMaterial was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: material.Label}
+		}
+		return e.RelatedMaterial, nil
+	}
+	return nil, &NotLoadedError{edge: "relatedMaterial"}
 }
 
 // SectionOrErr returns the Section value or an error if the edge
 // was not loaded in eager-loading.
 func (e MagazineEdges) SectionOrErr() ([]*Section, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[1] {
 		return e.Section, nil
 	}
 	return nil, &NotLoadedError{edge: "Section"}
@@ -45,6 +63,13 @@ func (*Magazine) scanValues() []interface{} {
 	return []interface{}{
 		&sql.NullInt64{},  // id
 		&sql.NullString{}, // url
+	}
+}
+
+// fkValues returns the types for scanning foreign-keys values from sql.Rows.
+func (*Magazine) fkValues() []interface{} {
+	return []interface{}{
+		&sql.NullInt64{}, // material_id
 	}
 }
 
@@ -65,7 +90,21 @@ func (m *Magazine) assignValues(values ...interface{}) error {
 	} else if value.Valid {
 		m.URL = value.String
 	}
+	values = values[1:]
+	if len(values) == len(magazine.ForeignKeys) {
+		if value, ok := values[0].(*sql.NullInt64); !ok {
+			return fmt.Errorf("unexpected type %T for edge-field material_id", value)
+		} else if value.Valid {
+			m.material_id = new(int)
+			*m.material_id = int(value.Int64)
+		}
+	}
 	return nil
+}
+
+// QueryRelatedMaterial queries the relatedMaterial edge of the Magazine.
+func (m *Magazine) QueryRelatedMaterial() *MaterialQuery {
+	return (&MagazineClient{config: m.config}).QueryRelatedMaterial(m)
 }
 
 // QuerySection queries the Section edge of the Magazine.

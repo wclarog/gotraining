@@ -21,13 +21,10 @@ func (Material) Config() ent.Config {
 func (Material) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("uniqueCode").
-			NotEmpty().
-			Unique().
-			Immutable(),
+			Unique(),
 		field.String("name"),
 		field.Time("dateOfEmission"),
-		field.Int("numberOfPages").
-			Positive(),
+		field.Uint("numberOfPages"),
 		field.Int("materialType").
 			NonNegative(),
 	}
@@ -36,8 +33,8 @@ func (Material) Fields() []ent.Field {
 // Edges of the Material.
 func (Material) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("Book", Book.Type).Unique(),
-		edge.To("Newspaper", Newspaper.Type).Unique(),
-		edge.To("Magazine", Magazine.Type).Unique(),
+		edge.To("Book", Book.Type).StorageKey(edge.Column("material_id")).Unique(),
+		edge.To("Newspaper", Newspaper.Type).StorageKey(edge.Column("material_id")).Unique(),
+		edge.To("Magazine", Magazine.Type).StorageKey(edge.Column("material_id")).Unique(),
 	}
 }

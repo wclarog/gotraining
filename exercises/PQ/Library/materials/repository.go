@@ -2,7 +2,6 @@ package materials
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"excercise-library/ent"
 	material2 "excercise-library/ent/material"
@@ -33,24 +32,18 @@ type Repository interface {
 }
 
 type repository struct {
-	db *sql.DB
+	client *ent.Client
 }
 
-func NewRepository(db *sql.DB) Repository {
+func NewRepository(client *ent.Client) Repository {
 	return &repository{
-		db: db,
+		client: client,
 	}
 }
 
 // Materials
 func (r repository) GetMaterials(ctx context.Context) ([]DTOMaterial, error) {
-	client, errOpen := ent.Open("mysql", "root:RooT27134668@tcp(localhost:3306)/dev_library")
-	if errOpen != nil {
-		return nil, errOpen
-	}
-	defer client.Close()
-
-	repoMaterials, err := client.
+	repoMaterials, err := r.client.
 		Material.
 		Query().
 		All(ctx)
@@ -69,13 +62,7 @@ func (r repository) GetMaterials(ctx context.Context) ([]DTOMaterial, error) {
 }
 
 func (r repository) GetMaterialByCode(ctx context.Context, uniqueCode string) (DTOMaterial, error) {
-	client, errOpen := ent.Open("mysql", "root:RooT27134668@tcp(localhost:3306)/dev_library")
-	if errOpen != nil {
-		return DTOMaterial{}, errOpen
-	}
-	defer client.Close()
-
-	repoMaterial, err := client.
+	repoMaterial, err := r.client.
 		Material.
 		Query().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
@@ -95,13 +82,7 @@ func (r repository) GetMaterialByCode(ctx context.Context, uniqueCode string) (D
 }
 
 func (r repository) DeleteMaterial(ctx context.Context, uniqueCode string) error {
-	client, errOpen := ent.Open("mysql", "root:RooT27134668@tcp(localhost:3306)/dev_library")
-	if errOpen != nil {
-		return errOpen
-	}
-	defer client.Close()
-
-	_, err := client.
+	_, err := r.client.
 		Material.
 		Delete().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
@@ -116,16 +97,11 @@ func (r repository) DeleteMaterial(ctx context.Context, uniqueCode string) error
 // Books
 
 func (r repository) GetBooks(ctx context.Context) ([]DTOBook, error) {
-	client, errOpen := ent.Open("mysql", "root:RooT27134668@tcp(localhost:3306)/dev_library")
-	if errOpen != nil {
-		return nil, errOpen
-	}
-	defer client.Close()
-
-	repoMaterials, err := client.
+	repoMaterials, err := r.client.
 		Material.
 		Query().
 		Where(material2.MaterialTypeEQ(int(BookType))).
+		WithBook().
 		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed querying books: %v", err)
@@ -134,10 +110,8 @@ func (r repository) GetBooks(ctx context.Context) ([]DTOBook, error) {
 	repoBooks := make([]*ent.Book, len(repoMaterials))
 
 	for idx, m := range repoMaterials {
-		repoBooks[idx], err = m.QueryBook().Only(ctx)
-		if err != nil {
-			return nil, errors.New("missing book for material in GetBooks")
-		}
+		repoBooks[idx] = m.Edges.Book
+
 	}
 
 	log.Println("books returned")
@@ -152,13 +126,7 @@ func (r repository) GetBooks(ctx context.Context) ([]DTOBook, error) {
 }
 
 func (r repository) GetBookByCode(ctx context.Context, uniqueCode string) (DTOBook, error) {
-	client, errOpen := ent.Open("mysql", "root:RooT27134668@tcp(localhost:3306)/dev_library")
-	if errOpen != nil {
-		return DTOBook{}, errOpen
-	}
-	defer client.Close()
-
-	repoMaterial, err := client.
+	repoMaterial, err := r.client.
 		Material.
 		Query().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
@@ -187,18 +155,12 @@ func (r repository) GetBookByCode(ctx context.Context, uniqueCode string) (DTOBo
 }
 
 func (r repository) AddBook(ctx context.Context, book DTOBook) (DTOBook, error) {
-	client, errOpen := ent.Open("mysql", "root:RooT27134668@tcp(localhost:3306)/dev_library")
-	if errOpen != nil {
-		return DTOBook{}, errOpen
-	}
-	defer client.Close()
-
 	repoMaterial, repoBook, err := r.dtoToRepoBook(book)
 	if err != nil {
 		return DTOBook{}, err
 	}
 
-	_, err = client.
+	_, err = r.client.
 		Material.
 		Create().
 		SetUniqueCode(repoMaterial.UniqueCode).
@@ -218,18 +180,12 @@ func (r repository) AddBook(ctx context.Context, book DTOBook) (DTOBook, error) 
 }
 
 func (r repository) UpdateBook(ctx context.Context, uniqueCode string, book DTOBook) (DTOBook, error) {
-	client, errOpen := ent.Open("mysql", "root:RooT27134668@tcp(localhost:3306)/dev_library")
-	if errOpen != nil {
-		return DTOBook{}, errOpen
-	}
-	defer client.Close()
-
 	repoMaterial, repoBook, err := r.dtoToRepoBook(book)
 	if err != nil {
 		return DTOBook{}, err
 	}
 
-	_, err = client.
+	_, err = r.client.
 		Material.
 		Update().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
@@ -251,13 +207,7 @@ func (r repository) UpdateBook(ctx context.Context, uniqueCode string, book DTOB
 // Newspapers
 
 func (r repository) GetNewspapers(ctx context.Context) ([]DTONewspaper, error) {
-	client, errOpen := ent.Open("mysql", "root:RooT27134668@tcp(localhost:3306)/dev_library")
-	if errOpen != nil {
-		return nil, errOpen
-	}
-	defer client.Close()
-
-	repoMaterials, err := client.
+	repoMaterials, err := r.client.
 		Material.
 		Query().
 		Where(material2.MaterialTypeEQ(int(NewspaperType))).
@@ -287,13 +237,7 @@ func (r repository) GetNewspapers(ctx context.Context) ([]DTONewspaper, error) {
 }
 
 func (r repository) GetNewspaperByCode(ctx context.Context, uniqueCode string) (DTONewspaper, error) {
-	client, errOpen := ent.Open("mysql", "root:RooT27134668@tcp(localhost:3306)/dev_library")
-	if errOpen != nil {
-		return DTONewspaper{}, errOpen
-	}
-	defer client.Close()
-
-	repoMaterial, err := client.
+	repoMaterial, err := r.client.
 		Material.
 		Query().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
@@ -322,18 +266,12 @@ func (r repository) GetNewspaperByCode(ctx context.Context, uniqueCode string) (
 }
 
 func (r repository) AddNewspaper(ctx context.Context, newspaper DTONewspaper) (DTONewspaper, error) {
-	client, errOpen := ent.Open("mysql", "root:RooT27134668@tcp(localhost:3306)/dev_library")
-	if errOpen != nil {
-		return DTONewspaper{}, errOpen
-	}
-	defer client.Close()
-
 	repoMaterial, repoNewspaper, err := r.dtoToRepoNewspaper(newspaper)
 	if err != nil {
 		return DTONewspaper{}, err
 	}
 
-	_, err = client.
+	_, err = r.client.
 		Material.
 		Create().
 		SetUniqueCode(repoMaterial.UniqueCode).
@@ -353,18 +291,12 @@ func (r repository) AddNewspaper(ctx context.Context, newspaper DTONewspaper) (D
 }
 
 func (r repository) UpdateNewspaper(ctx context.Context, uniqueCode string, newspaper DTONewspaper) (DTONewspaper, error) {
-	client, errOpen := ent.Open("mysql", "root:RooT27134668@tcp(localhost:3306)/dev_library")
-	if errOpen != nil {
-		return DTONewspaper{}, errOpen
-	}
-	defer client.Close()
-
 	repoMaterial, repoNewspaper, err := r.dtoToRepoNewspaper(newspaper)
 	if err != nil {
 		return DTONewspaper{}, err
 	}
 
-	_, err = client.
+	_, err = r.client.
 		Material.
 		Update().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
@@ -386,13 +318,7 @@ func (r repository) UpdateNewspaper(ctx context.Context, uniqueCode string, news
 // Magazines
 
 func (r repository) GetMagazines(ctx context.Context) ([]DTOMagazine, error) {
-	client, errOpen := ent.Open("mysql", "root:RooT27134668@tcp(localhost:3306)/dev_library")
-	if errOpen != nil {
-		return nil, errOpen
-	}
-	defer client.Close()
-
-	repoMaterials, err := client.
+	repoMaterials, err := r.client.
 		Material.
 		Query().
 		Where(material2.MaterialTypeEQ(int(MagazineType))).
@@ -422,13 +348,7 @@ func (r repository) GetMagazines(ctx context.Context) ([]DTOMagazine, error) {
 }
 
 func (r repository) GetMagazineByCode(ctx context.Context, uniqueCode string) (DTOMagazine, error) {
-	client, errOpen := ent.Open("mysql", "root:RooT27134668@tcp(localhost:3306)/dev_library")
-	if errOpen != nil {
-		return DTOMagazine{}, errOpen
-	}
-	defer client.Close()
-
-	repoMaterial, err := client.
+	repoMaterial, err := r.client.
 		Material.
 		Query().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
@@ -457,18 +377,12 @@ func (r repository) GetMagazineByCode(ctx context.Context, uniqueCode string) (D
 }
 
 func (r repository) AddMagazine(ctx context.Context, magazine DTOMagazine) (DTOMagazine, error) {
-	client, errOpen := ent.Open("mysql", "root:RooT27134668@tcp(localhost:3306)/dev_library")
-	if errOpen != nil {
-		return DTOMagazine{}, errOpen
-	}
-	defer client.Close()
-
 	repoMaterial, repoMagazine, err := r.dtoToRepoMagazine(magazine)
 	if err != nil {
 		return DTOMagazine{}, err
 	}
 
-	_, err = client.
+	_, err = r.client.
 		Material.
 		Create().
 		SetUniqueCode(repoMaterial.UniqueCode).
@@ -488,18 +402,12 @@ func (r repository) AddMagazine(ctx context.Context, magazine DTOMagazine) (DTOM
 }
 
 func (r repository) UpdateMagazine(ctx context.Context, uniqueCode string, magazine DTOMagazine) (DTOMagazine, error) {
-	client, errOpen := ent.Open("mysql", "root:RooT27134668@tcp(localhost:3306)/dev_library")
-	if errOpen != nil {
-		return DTOMagazine{}, errOpen
-	}
-	defer client.Close()
-
 	repoMaterial, repoMagazine, err := r.dtoToRepoMagazine(magazine)
 	if err != nil {
 		return DTOMagazine{}, err
 	}
 
-	_, err = client.
+	_, err = r.client.
 		Material.
 		Update().
 		Where(material2.UniqueCodeEQ(uniqueCode)).

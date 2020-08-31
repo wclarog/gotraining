@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"excercise-library/ent/material"
 	"excercise-library/ent/newspaper"
 	"fmt"
 	"strings"
@@ -17,6 +18,33 @@ type Newspaper struct {
 	ID int `json:"id,omitempty"`
 	// URL holds the value of the "url" field.
 	URL string `json:"url,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the NewspaperQuery when eager-loading is set.
+	Edges       NewspaperEdges `json:"edges"`
+	material_id *int
+}
+
+// NewspaperEdges holds the relations/edges for other nodes in the graph.
+type NewspaperEdges struct {
+	// RelatedMaterial holds the value of the relatedMaterial edge.
+	RelatedMaterial *Material
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// RelatedMaterialOrErr returns the RelatedMaterial value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e NewspaperEdges) RelatedMaterialOrErr() (*Material, error) {
+	if e.loadedTypes[0] {
+		if e.RelatedMaterial == nil {
+			// The edge relatedMaterial was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: material.Label}
+		}
+		return e.RelatedMaterial, nil
+	}
+	return nil, &NotLoadedError{edge: "relatedMaterial"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -24,6 +52,13 @@ func (*Newspaper) scanValues() []interface{} {
 	return []interface{}{
 		&sql.NullInt64{},  // id
 		&sql.NullString{}, // url
+	}
+}
+
+// fkValues returns the types for scanning foreign-keys values from sql.Rows.
+func (*Newspaper) fkValues() []interface{} {
+	return []interface{}{
+		&sql.NullInt64{}, // material_id
 	}
 }
 
@@ -44,7 +79,21 @@ func (n *Newspaper) assignValues(values ...interface{}) error {
 	} else if value.Valid {
 		n.URL = value.String
 	}
+	values = values[1:]
+	if len(values) == len(newspaper.ForeignKeys) {
+		if value, ok := values[0].(*sql.NullInt64); !ok {
+			return fmt.Errorf("unexpected type %T for edge-field material_id", value)
+		} else if value.Valid {
+			n.material_id = new(int)
+			*n.material_id = int(value.Int64)
+		}
+	}
 	return nil
+}
+
+// QueryRelatedMaterial queries the relatedMaterial edge of the Newspaper.
+func (n *Newspaper) QueryRelatedMaterial() *MaterialQuery {
+	return (&NewspaperClient{config: n.config}).QueryRelatedMaterial(n)
 }
 
 // Update returns a builder for updating this Newspaper.

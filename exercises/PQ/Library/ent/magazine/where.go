@@ -210,6 +210,34 @@ func URLContainsFold(v string) predicate.Magazine {
 	})
 }
 
+// HasRelatedMaterial applies the HasEdge predicate on the "relatedMaterial" edge.
+func HasRelatedMaterial() predicate.Magazine {
+	return predicate.Magazine(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(RelatedMaterialTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, RelatedMaterialTable, RelatedMaterialColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRelatedMaterialWith applies the HasEdge predicate on the "relatedMaterial" edge with a given conditions (other predicates).
+func HasRelatedMaterialWith(preds ...predicate.Material) predicate.Magazine {
+	return predicate.Magazine(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(RelatedMaterialInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, RelatedMaterialTable, RelatedMaterialColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasSection applies the HasEdge predicate on the "Section" edge.
 func HasSection() predicate.Magazine {
 	return predicate.Magazine(func(s *sql.Selector) {

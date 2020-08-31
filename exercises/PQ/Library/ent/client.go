@@ -228,6 +228,22 @@ func (c *BookClient) GetX(ctx context.Context, id int) *Book {
 	return b
 }
 
+// QueryRelatedMaterial queries the relatedMaterial edge of a Book.
+func (c *BookClient) QueryRelatedMaterial(b *Book) *MaterialQuery {
+	query := &MaterialQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := b.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(book.Table, book.FieldID, id),
+			sqlgraph.To(material.Table, material.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, book.RelatedMaterialTable, book.RelatedMaterialColumn),
+		)
+		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *BookClient) Hooks() []Hook {
 	return c.hooks.Book
@@ -314,6 +330,22 @@ func (c *MagazineClient) GetX(ctx context.Context, id int) *Magazine {
 		panic(err)
 	}
 	return m
+}
+
+// QueryRelatedMaterial queries the relatedMaterial edge of a Magazine.
+func (c *MagazineClient) QueryRelatedMaterial(m *Magazine) *MaterialQuery {
+	query := &MaterialQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(magazine.Table, magazine.FieldID, id),
+			sqlgraph.To(material.Table, material.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, magazine.RelatedMaterialTable, magazine.RelatedMaterialColumn),
+		)
+		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // QuerySection queries the Section edge of a Magazine.
@@ -428,7 +460,7 @@ func (c *MaterialClient) QueryBook(m *Material) *BookQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(material.Table, material.FieldID, id),
 			sqlgraph.To(book.Table, book.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, material.BookTable, material.BookColumn),
+			sqlgraph.Edge(sqlgraph.O2O, false, material.BookTable, material.BookColumn),
 		)
 		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
 		return fromV, nil
@@ -444,7 +476,7 @@ func (c *MaterialClient) QueryNewspaper(m *Material) *NewspaperQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(material.Table, material.FieldID, id),
 			sqlgraph.To(newspaper.Table, newspaper.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, material.NewspaperTable, material.NewspaperColumn),
+			sqlgraph.Edge(sqlgraph.O2O, false, material.NewspaperTable, material.NewspaperColumn),
 		)
 		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
 		return fromV, nil
@@ -460,7 +492,7 @@ func (c *MaterialClient) QueryMagazine(m *Material) *MagazineQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(material.Table, material.FieldID, id),
 			sqlgraph.To(magazine.Table, magazine.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, material.MagazineTable, material.MagazineColumn),
+			sqlgraph.Edge(sqlgraph.O2O, false, material.MagazineTable, material.MagazineColumn),
 		)
 		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
 		return fromV, nil
@@ -554,6 +586,22 @@ func (c *NewspaperClient) GetX(ctx context.Context, id int) *Newspaper {
 		panic(err)
 	}
 	return n
+}
+
+// QueryRelatedMaterial queries the relatedMaterial edge of a Newspaper.
+func (c *NewspaperClient) QueryRelatedMaterial(n *Newspaper) *MaterialQuery {
+	query := &MaterialQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := n.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(newspaper.Table, newspaper.FieldID, id),
+			sqlgraph.To(material.Table, material.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, newspaper.RelatedMaterialTable, newspaper.RelatedMaterialColumn),
+		)
+		fromV = sqlgraph.Neighbors(n.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.

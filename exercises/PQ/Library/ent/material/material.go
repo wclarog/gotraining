@@ -28,26 +28,26 @@ const (
 	// Table holds the table name of the material in the database.
 	Table = "Material"
 	// BookTable is the table the holds the Book relation/edge.
-	BookTable = "Material"
+	BookTable = "Book"
 	// BookInverseTable is the table name for the Book entity.
 	// It exists in this package in order to avoid circular dependency with the "book" package.
 	BookInverseTable = "Book"
 	// BookColumn is the table column denoting the Book relation/edge.
-	BookColumn = "material_book"
+	BookColumn = "material_id"
 	// NewspaperTable is the table the holds the Newspaper relation/edge.
-	NewspaperTable = "Material"
+	NewspaperTable = "Newspaper"
 	// NewspaperInverseTable is the table name for the Newspaper entity.
 	// It exists in this package in order to avoid circular dependency with the "newspaper" package.
 	NewspaperInverseTable = "Newspaper"
 	// NewspaperColumn is the table column denoting the Newspaper relation/edge.
-	NewspaperColumn = "material_newspaper"
+	NewspaperColumn = "material_id"
 	// MagazineTable is the table the holds the Magazine relation/edge.
-	MagazineTable = "Material"
+	MagazineTable = "Magazine"
 	// MagazineInverseTable is the table name for the Magazine entity.
 	// It exists in this package in order to avoid circular dependency with the "magazine" package.
 	MagazineInverseTable = "Magazine"
 	// MagazineColumn is the table column denoting the Magazine relation/edge.
-	MagazineColumn = "material_magazine"
+	MagazineColumn = "material_id"
 )
 
 // Columns holds all SQL columns for material fields.
@@ -60,18 +60,7 @@ var Columns = []string{
 	FieldMaterialType,
 }
 
-// ForeignKeys holds the SQL foreign-keys that are owned by the Material type.
-var ForeignKeys = []string{
-	"material_book",
-	"material_newspaper",
-	"material_magazine",
-}
-
 var (
-	// UniqueCodeValidator is a validator for the "uniqueCode" field. It is called by the builders before save.
-	UniqueCodeValidator func(string) error
-	// NumberOfPagesValidator is a validator for the "numberOfPages" field. It is called by the builders before save.
-	NumberOfPagesValidator func(int) error
 	// MaterialTypeValidator is a validator for the "materialType" field. It is called by the builders before save.
 	MaterialTypeValidator func(int) error
 )

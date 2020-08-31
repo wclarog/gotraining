@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"excercise-library/ent/material"
 	"excercise-library/ent/newspaper"
 	"excercise-library/ent/predicate"
 	"fmt"
@@ -33,13 +34,39 @@ func (nu *NewspaperUpdate) SetURL(s string) *NewspaperUpdate {
 	return nu
 }
 
+// SetRelatedMaterialID sets the relatedMaterial edge to Material by id.
+func (nu *NewspaperUpdate) SetRelatedMaterialID(id int) *NewspaperUpdate {
+	nu.mutation.SetRelatedMaterialID(id)
+	return nu
+}
+
+// SetNillableRelatedMaterialID sets the relatedMaterial edge to Material by id if the given value is not nil.
+func (nu *NewspaperUpdate) SetNillableRelatedMaterialID(id *int) *NewspaperUpdate {
+	if id != nil {
+		nu = nu.SetRelatedMaterialID(*id)
+	}
+	return nu
+}
+
+// SetRelatedMaterial sets the relatedMaterial edge to Material.
+func (nu *NewspaperUpdate) SetRelatedMaterial(m *Material) *NewspaperUpdate {
+	return nu.SetRelatedMaterialID(m.ID)
+}
+
 // Mutation returns the NewspaperMutation object of the builder.
 func (nu *NewspaperUpdate) Mutation() *NewspaperMutation {
 	return nu.mutation
 }
 
+// ClearRelatedMaterial clears the relatedMaterial edge to Material.
+func (nu *NewspaperUpdate) ClearRelatedMaterial() *NewspaperUpdate {
+	nu.mutation.ClearRelatedMaterial()
+	return nu
+}
+
 // Save executes the query and returns the number of rows/vertices matched by this operation.
 func (nu *NewspaperUpdate) Save(ctx context.Context) (int, error) {
+
 	var (
 		err      error
 		affected int
@@ -114,6 +141,41 @@ func (nu *NewspaperUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: newspaper.FieldURL,
 		})
 	}
+	if nu.mutation.RelatedMaterialCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   newspaper.RelatedMaterialTable,
+			Columns: []string{newspaper.RelatedMaterialColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: material.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := nu.mutation.RelatedMaterialIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   newspaper.RelatedMaterialTable,
+			Columns: []string{newspaper.RelatedMaterialColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: material.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, nu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{newspaper.Label}
@@ -138,13 +200,39 @@ func (nuo *NewspaperUpdateOne) SetURL(s string) *NewspaperUpdateOne {
 	return nuo
 }
 
+// SetRelatedMaterialID sets the relatedMaterial edge to Material by id.
+func (nuo *NewspaperUpdateOne) SetRelatedMaterialID(id int) *NewspaperUpdateOne {
+	nuo.mutation.SetRelatedMaterialID(id)
+	return nuo
+}
+
+// SetNillableRelatedMaterialID sets the relatedMaterial edge to Material by id if the given value is not nil.
+func (nuo *NewspaperUpdateOne) SetNillableRelatedMaterialID(id *int) *NewspaperUpdateOne {
+	if id != nil {
+		nuo = nuo.SetRelatedMaterialID(*id)
+	}
+	return nuo
+}
+
+// SetRelatedMaterial sets the relatedMaterial edge to Material.
+func (nuo *NewspaperUpdateOne) SetRelatedMaterial(m *Material) *NewspaperUpdateOne {
+	return nuo.SetRelatedMaterialID(m.ID)
+}
+
 // Mutation returns the NewspaperMutation object of the builder.
 func (nuo *NewspaperUpdateOne) Mutation() *NewspaperMutation {
 	return nuo.mutation
 }
 
+// ClearRelatedMaterial clears the relatedMaterial edge to Material.
+func (nuo *NewspaperUpdateOne) ClearRelatedMaterial() *NewspaperUpdateOne {
+	nuo.mutation.ClearRelatedMaterial()
+	return nuo
+}
+
 // Save executes the query and returns the updated entity.
 func (nuo *NewspaperUpdateOne) Save(ctx context.Context) (*Newspaper, error) {
+
 	var (
 		err  error
 		node *Newspaper
@@ -216,6 +304,41 @@ func (nuo *NewspaperUpdateOne) sqlSave(ctx context.Context) (n *Newspaper, err e
 			Value:  value,
 			Column: newspaper.FieldURL,
 		})
+	}
+	if nuo.mutation.RelatedMaterialCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   newspaper.RelatedMaterialTable,
+			Columns: []string{newspaper.RelatedMaterialColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: material.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := nuo.mutation.RelatedMaterialIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   newspaper.RelatedMaterialTable,
+			Columns: []string{newspaper.RelatedMaterialColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: material.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	n = &Newspaper{config: nuo.config}
 	_spec.Assign = n.assignValues

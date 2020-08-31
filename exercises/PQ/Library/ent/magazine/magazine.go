@@ -10,11 +10,20 @@ const (
 	// FieldURL holds the string denoting the url field in the database.
 	FieldURL = "url"
 
+	// EdgeRelatedMaterial holds the string denoting the relatedmaterial edge name in mutations.
+	EdgeRelatedMaterial = "relatedMaterial"
 	// EdgeSection holds the string denoting the section edge name in mutations.
 	EdgeSection = "Section"
 
 	// Table holds the table name of the magazine in the database.
 	Table = "Magazine"
+	// RelatedMaterialTable is the table the holds the relatedMaterial relation/edge.
+	RelatedMaterialTable = "Magazine"
+	// RelatedMaterialInverseTable is the table name for the Material entity.
+	// It exists in this package in order to avoid circular dependency with the "material" package.
+	RelatedMaterialInverseTable = "Material"
+	// RelatedMaterialColumn is the table column denoting the relatedMaterial relation/edge.
+	RelatedMaterialColumn = "material_id"
 	// SectionTable is the table the holds the Section relation/edge.
 	SectionTable = "Section"
 	// SectionInverseTable is the table name for the Section entity.
@@ -28,4 +37,9 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldURL,
+}
+
+// ForeignKeys holds the SQL foreign-keys that are owned by the Magazine type.
+var ForeignKeys = []string{
+	"material_id",
 }

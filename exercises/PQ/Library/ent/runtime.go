@@ -13,14 +13,6 @@ import (
 func init() {
 	materialFields := schema.Material{}.Fields()
 	_ = materialFields
-	// materialDescUniqueCode is the schema descriptor for uniqueCode field.
-	materialDescUniqueCode := materialFields[0].Descriptor()
-	// material.UniqueCodeValidator is a validator for the "uniqueCode" field. It is called by the builders before save.
-	material.UniqueCodeValidator = materialDescUniqueCode.Validators[0].(func(string) error)
-	// materialDescNumberOfPages is the schema descriptor for numberOfPages field.
-	materialDescNumberOfPages := materialFields[3].Descriptor()
-	// material.NumberOfPagesValidator is a validator for the "numberOfPages" field. It is called by the builders before save.
-	material.NumberOfPagesValidator = materialDescNumberOfPages.Validators[0].(func(int) error)
 	// materialDescMaterialType is the schema descriptor for materialType field.
 	materialDescMaterialType := materialFields[4].Descriptor()
 	// material.MaterialTypeValidator is a validator for the "materialType" field. It is called by the builders before save.

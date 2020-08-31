@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"excercise-library/ent/magazine"
+	"excercise-library/ent/material"
 	"excercise-library/ent/section"
 	"fmt"
 
@@ -24,6 +25,25 @@ type MagazineCreate struct {
 func (mc *MagazineCreate) SetURL(s string) *MagazineCreate {
 	mc.mutation.SetURL(s)
 	return mc
+}
+
+// SetRelatedMaterialID sets the relatedMaterial edge to Material by id.
+func (mc *MagazineCreate) SetRelatedMaterialID(id int) *MagazineCreate {
+	mc.mutation.SetRelatedMaterialID(id)
+	return mc
+}
+
+// SetNillableRelatedMaterialID sets the relatedMaterial edge to Material by id if the given value is not nil.
+func (mc *MagazineCreate) SetNillableRelatedMaterialID(id *int) *MagazineCreate {
+	if id != nil {
+		mc = mc.SetRelatedMaterialID(*id)
+	}
+	return mc
+}
+
+// SetRelatedMaterial sets the relatedMaterial edge to Material.
+func (mc *MagazineCreate) SetRelatedMaterial(m *Material) *MagazineCreate {
+	return mc.SetRelatedMaterialID(m.ID)
 }
 
 // AddSectionIDs adds the Section edge to Section by ids.
@@ -125,6 +145,25 @@ func (mc *MagazineCreate) createSpec() (*Magazine, *sqlgraph.CreateSpec) {
 			Column: magazine.FieldURL,
 		})
 		m.URL = value
+	}
+	if nodes := mc.mutation.RelatedMaterialIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   magazine.RelatedMaterialTable,
+			Columns: []string{magazine.RelatedMaterialColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: material.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := mc.mutation.SectionIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

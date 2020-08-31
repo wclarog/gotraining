@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"errors"
 	"excercise-library/ent/book"
 	"excercise-library/ent/magazine"
@@ -30,7 +31,6 @@ type MaterialQuery struct {
 	withBook      *BookQuery
 	withNewspaper *NewspaperQuery
 	withMagazine  *MagazineQuery
-	withFKs       bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -70,7 +70,7 @@ func (mq *MaterialQuery) QueryBook() *BookQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(material.Table, material.FieldID, mq.sqlQuery()),
 			sqlgraph.To(book.Table, book.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, material.BookTable, material.BookColumn),
+			sqlgraph.Edge(sqlgraph.O2O, false, material.BookTable, material.BookColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
 		return fromU, nil
@@ -88,7 +88,7 @@ func (mq *MaterialQuery) QueryNewspaper() *NewspaperQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(material.Table, material.FieldID, mq.sqlQuery()),
 			sqlgraph.To(newspaper.Table, newspaper.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, material.NewspaperTable, material.NewspaperColumn),
+			sqlgraph.Edge(sqlgraph.O2O, false, material.NewspaperTable, material.NewspaperColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
 		return fromU, nil
@@ -106,7 +106,7 @@ func (mq *MaterialQuery) QueryMagazine() *MagazineQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(material.Table, material.FieldID, mq.sqlQuery()),
 			sqlgraph.To(magazine.Table, magazine.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, material.MagazineTable, material.MagazineColumn),
+			sqlgraph.Edge(sqlgraph.O2O, false, material.MagazineTable, material.MagazineColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
 		return fromU, nil
@@ -391,7 +391,6 @@ func (mq *MaterialQuery) prepareQuery(ctx context.Context) error {
 func (mq *MaterialQuery) sqlAll(ctx context.Context) ([]*Material, error) {
 	var (
 		nodes       = []*Material{}
-		withFKs     = mq.withFKs
 		_spec       = mq.querySpec()
 		loadedTypes = [3]bool{
 			mq.withBook != nil,
@@ -399,19 +398,10 @@ func (mq *MaterialQuery) sqlAll(ctx context.Context) ([]*Material, error) {
 			mq.withMagazine != nil,
 		}
 	)
-	if mq.withBook != nil || mq.withNewspaper != nil || mq.withMagazine != nil {
-		withFKs = true
-	}
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, material.ForeignKeys...)
-	}
 	_spec.ScanValues = func() []interface{} {
 		node := &Material{config: mq.config}
 		nodes = append(nodes, node)
 		values := node.scanValues()
-		if withFKs {
-			values = append(values, node.fkValues()...)
-		}
 		return values
 	}
 	_spec.Assign = func(values ...interface{}) error {
@@ -430,77 +420,86 @@ func (mq *MaterialQuery) sqlAll(ctx context.Context) ([]*Material, error) {
 	}
 
 	if query := mq.withBook; query != nil {
-		ids := make([]int, 0, len(nodes))
-		nodeids := make(map[int][]*Material)
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Material)
 		for i := range nodes {
-			if fk := nodes[i].material_book; fk != nil {
-				ids = append(ids, *fk)
-				nodeids[*fk] = append(nodeids[*fk], nodes[i])
-			}
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
 		}
-		query.Where(book.IDIn(ids...))
+		query.withFKs = true
+		query.Where(predicate.Book(func(s *sql.Selector) {
+			s.Where(sql.InValues(material.BookColumn, fks...))
+		}))
 		neighbors, err := query.All(ctx)
 		if err != nil {
 			return nil, err
 		}
 		for _, n := range neighbors {
-			nodes, ok := nodeids[n.ID]
+			fk := n.material_id
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "material_id" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "material_book" returned %v`, n.ID)
+				return nil, fmt.Errorf(`unexpected foreign-key "material_id" returned %v for node %v`, *fk, n.ID)
 			}
-			for i := range nodes {
-				nodes[i].Edges.Book = n
-			}
+			node.Edges.Book = n
 		}
 	}
 
 	if query := mq.withNewspaper; query != nil {
-		ids := make([]int, 0, len(nodes))
-		nodeids := make(map[int][]*Material)
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Material)
 		for i := range nodes {
-			if fk := nodes[i].material_newspaper; fk != nil {
-				ids = append(ids, *fk)
-				nodeids[*fk] = append(nodeids[*fk], nodes[i])
-			}
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
 		}
-		query.Where(newspaper.IDIn(ids...))
+		query.withFKs = true
+		query.Where(predicate.Newspaper(func(s *sql.Selector) {
+			s.Where(sql.InValues(material.NewspaperColumn, fks...))
+		}))
 		neighbors, err := query.All(ctx)
 		if err != nil {
 			return nil, err
 		}
 		for _, n := range neighbors {
-			nodes, ok := nodeids[n.ID]
+			fk := n.material_id
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "material_id" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "material_newspaper" returned %v`, n.ID)
+				return nil, fmt.Errorf(`unexpected foreign-key "material_id" returned %v for node %v`, *fk, n.ID)
 			}
-			for i := range nodes {
-				nodes[i].Edges.Newspaper = n
-			}
+			node.Edges.Newspaper = n
 		}
 	}
 
 	if query := mq.withMagazine; query != nil {
-		ids := make([]int, 0, len(nodes))
-		nodeids := make(map[int][]*Material)
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Material)
 		for i := range nodes {
-			if fk := nodes[i].material_magazine; fk != nil {
-				ids = append(ids, *fk)
-				nodeids[*fk] = append(nodeids[*fk], nodes[i])
-			}
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
 		}
-		query.Where(magazine.IDIn(ids...))
+		query.withFKs = true
+		query.Where(predicate.Magazine(func(s *sql.Selector) {
+			s.Where(sql.InValues(material.MagazineColumn, fks...))
+		}))
 		neighbors, err := query.All(ctx)
 		if err != nil {
 			return nil, err
 		}
 		for _, n := range neighbors {
-			nodes, ok := nodeids[n.ID]
+			fk := n.material_id
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "material_id" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "material_magazine" returned %v`, n.ID)
+				return nil, fmt.Errorf(`unexpected foreign-key "material_id" returned %v for node %v`, *fk, n.ID)
 			}
-			for i := range nodes {
-				nodes[i].Edges.Magazine = n
-			}
+			node.Edges.Magazine = n
 		}
 	}
 

@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"errors"
+	"excercise-library/ent/material"
 	"excercise-library/ent/newspaper"
 	"fmt"
 
@@ -23,6 +24,25 @@ type NewspaperCreate struct {
 func (nc *NewspaperCreate) SetURL(s string) *NewspaperCreate {
 	nc.mutation.SetURL(s)
 	return nc
+}
+
+// SetRelatedMaterialID sets the relatedMaterial edge to Material by id.
+func (nc *NewspaperCreate) SetRelatedMaterialID(id int) *NewspaperCreate {
+	nc.mutation.SetRelatedMaterialID(id)
+	return nc
+}
+
+// SetNillableRelatedMaterialID sets the relatedMaterial edge to Material by id if the given value is not nil.
+func (nc *NewspaperCreate) SetNillableRelatedMaterialID(id *int) *NewspaperCreate {
+	if id != nil {
+		nc = nc.SetRelatedMaterialID(*id)
+	}
+	return nc
+}
+
+// SetRelatedMaterial sets the relatedMaterial edge to Material.
+func (nc *NewspaperCreate) SetRelatedMaterial(m *Material) *NewspaperCreate {
+	return nc.SetRelatedMaterialID(m.ID)
 }
 
 // Mutation returns the NewspaperMutation object of the builder.
@@ -109,6 +129,25 @@ func (nc *NewspaperCreate) createSpec() (*Newspaper, *sqlgraph.CreateSpec) {
 			Column: newspaper.FieldURL,
 		})
 		n.URL = value
+	}
+	if nodes := nc.mutation.RelatedMaterialIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   newspaper.RelatedMaterialTable,
+			Columns: []string{newspaper.RelatedMaterialColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: material.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return n, _spec
 }

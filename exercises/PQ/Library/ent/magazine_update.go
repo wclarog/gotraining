@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"excercise-library/ent/magazine"
+	"excercise-library/ent/material"
 	"excercise-library/ent/predicate"
 	"excercise-library/ent/section"
 	"fmt"
@@ -34,6 +35,25 @@ func (mu *MagazineUpdate) SetURL(s string) *MagazineUpdate {
 	return mu
 }
 
+// SetRelatedMaterialID sets the relatedMaterial edge to Material by id.
+func (mu *MagazineUpdate) SetRelatedMaterialID(id int) *MagazineUpdate {
+	mu.mutation.SetRelatedMaterialID(id)
+	return mu
+}
+
+// SetNillableRelatedMaterialID sets the relatedMaterial edge to Material by id if the given value is not nil.
+func (mu *MagazineUpdate) SetNillableRelatedMaterialID(id *int) *MagazineUpdate {
+	if id != nil {
+		mu = mu.SetRelatedMaterialID(*id)
+	}
+	return mu
+}
+
+// SetRelatedMaterial sets the relatedMaterial edge to Material.
+func (mu *MagazineUpdate) SetRelatedMaterial(m *Material) *MagazineUpdate {
+	return mu.SetRelatedMaterialID(m.ID)
+}
+
 // AddSectionIDs adds the Section edge to Section by ids.
 func (mu *MagazineUpdate) AddSectionIDs(ids ...int) *MagazineUpdate {
 	mu.mutation.AddSectionIDs(ids...)
@@ -52,6 +72,12 @@ func (mu *MagazineUpdate) AddSection(s ...*Section) *MagazineUpdate {
 // Mutation returns the MagazineMutation object of the builder.
 func (mu *MagazineUpdate) Mutation() *MagazineMutation {
 	return mu.mutation
+}
+
+// ClearRelatedMaterial clears the relatedMaterial edge to Material.
+func (mu *MagazineUpdate) ClearRelatedMaterial() *MagazineUpdate {
+	mu.mutation.ClearRelatedMaterial()
+	return mu
 }
 
 // RemoveSectionIDs removes the Section edge to Section by ids.
@@ -146,6 +172,41 @@ func (mu *MagazineUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: magazine.FieldURL,
 		})
 	}
+	if mu.mutation.RelatedMaterialCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   magazine.RelatedMaterialTable,
+			Columns: []string{magazine.RelatedMaterialColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: material.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := mu.mutation.RelatedMaterialIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   magazine.RelatedMaterialTable,
+			Columns: []string{magazine.RelatedMaterialColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: material.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if nodes := mu.mutation.RemovedSectionIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -208,6 +269,25 @@ func (muo *MagazineUpdateOne) SetURL(s string) *MagazineUpdateOne {
 	return muo
 }
 
+// SetRelatedMaterialID sets the relatedMaterial edge to Material by id.
+func (muo *MagazineUpdateOne) SetRelatedMaterialID(id int) *MagazineUpdateOne {
+	muo.mutation.SetRelatedMaterialID(id)
+	return muo
+}
+
+// SetNillableRelatedMaterialID sets the relatedMaterial edge to Material by id if the given value is not nil.
+func (muo *MagazineUpdateOne) SetNillableRelatedMaterialID(id *int) *MagazineUpdateOne {
+	if id != nil {
+		muo = muo.SetRelatedMaterialID(*id)
+	}
+	return muo
+}
+
+// SetRelatedMaterial sets the relatedMaterial edge to Material.
+func (muo *MagazineUpdateOne) SetRelatedMaterial(m *Material) *MagazineUpdateOne {
+	return muo.SetRelatedMaterialID(m.ID)
+}
+
 // AddSectionIDs adds the Section edge to Section by ids.
 func (muo *MagazineUpdateOne) AddSectionIDs(ids ...int) *MagazineUpdateOne {
 	muo.mutation.AddSectionIDs(ids...)
@@ -226,6 +306,12 @@ func (muo *MagazineUpdateOne) AddSection(s ...*Section) *MagazineUpdateOne {
 // Mutation returns the MagazineMutation object of the builder.
 func (muo *MagazineUpdateOne) Mutation() *MagazineMutation {
 	return muo.mutation
+}
+
+// ClearRelatedMaterial clears the relatedMaterial edge to Material.
+func (muo *MagazineUpdateOne) ClearRelatedMaterial() *MagazineUpdateOne {
+	muo.mutation.ClearRelatedMaterial()
+	return muo
 }
 
 // RemoveSectionIDs removes the Section edge to Section by ids.
@@ -317,6 +403,41 @@ func (muo *MagazineUpdateOne) sqlSave(ctx context.Context) (m *Magazine, err err
 			Value:  value,
 			Column: magazine.FieldURL,
 		})
+	}
+	if muo.mutation.RelatedMaterialCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   magazine.RelatedMaterialTable,
+			Columns: []string{magazine.RelatedMaterialColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: material.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := muo.mutation.RelatedMaterialIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   magazine.RelatedMaterialTable,
+			Columns: []string{magazine.RelatedMaterialColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: material.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if nodes := muo.mutation.RemovedSectionIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
