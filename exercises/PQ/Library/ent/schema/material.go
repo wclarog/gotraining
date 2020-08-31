@@ -2,6 +2,7 @@ package schema
 
 import (
 	"github.com/facebook/ent"
+	"github.com/facebook/ent/schema/edge"
 	"github.com/facebook/ent/schema/field"
 )
 
@@ -10,11 +11,19 @@ type Material struct {
 	ent.Schema
 }
 
+func (Material) Config() ent.Config {
+	return ent.Config{
+		Table: "Material",
+	}
+}
+
 // Fields of the Material.
 func (Material) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("uniqueCode").
-			Unique(),
+			NotEmpty().
+			Unique().
+			Immutable(),
 		field.String("name"),
 		field.Time("dateOfEmission"),
 		field.Int("numberOfPages").
@@ -26,5 +35,9 @@ func (Material) Fields() []ent.Field {
 
 // Edges of the Material.
 func (Material) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		edge.To("Book", Book.Type).Unique(),
+		edge.To("Newspaper", Newspaper.Type).Unique(),
+		edge.To("Magazine", Magazine.Type).Unique(),
+	}
 }

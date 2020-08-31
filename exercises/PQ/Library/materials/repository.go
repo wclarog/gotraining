@@ -5,9 +5,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/facebook/ent/examples/start/ent"
+	"go-kit-template/ent"
+	material2 "go-kit-template/ent/material"
 	"log"
-	"time"
+	//"time"
 )
 
 type Repository interface {
@@ -42,120 +43,207 @@ func NewRepository(db *sql.DB) Repository {
 }
 
 // Materials
-func (r repository) GetMaterials(_ context.Context, client *ent.Client) ([]DTOMaterial, error) {
-	materials, err := client.Material.
-		Query().
-		Where(user.NameEQ("a8m")).
-		// `Only` fails if no user found,
-		// or more than 1 user returned.
-		Only(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed querying user: %v", err)
+func (r repository) GetMaterials(ctx context.Context) ([]DTOMaterial, error) {
+	client, errOpen := ent.Open("mysql", "root:RooT27134668@tcp(localhost:3306)/dev_library")
+	if errOpen != nil {
+		return nil, errOpen
 	}
-	log.Println("user returned: ", u)
+	defer client.Close()
+
+	repoMaterials, err := client.
+		Material.
+		Query().
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed querying materials: %v", err)
+	}
+
+	materials, err := r.repoMaterialsToDto(repoMaterials)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Println("materials returned")
+
 	return materials, nil
 }
 
-func (r repository) GetMaterialByCode(_ context.Context, client *ent.Client, uniqueCode string) (DTOMaterial, error) {
-	material, err := client.Car.
+func (r repository) GetMaterialByCode(ctx context.Context, uniqueCode string) (DTOMaterial, error) {
+	client, errOpen := ent.Open("mysql", "root:RooT27134668@tcp(localhost:3306)/dev_library")
+	if errOpen != nil {
+		return DTOMaterial{}, errOpen
+	}
+	defer client.Close()
+
+	repoMaterial, err := client.
+		Material.
 		Query().
-		Where(user.NameEQ("a8m")).
-		// `Only` fails if no user found,
-		// or more than 1 user returned.
+		Where(material2.UniqueCodeEQ(uniqueCode)).
 		Only(ctx)
 	if err != nil {
-		return DTOMaterial{}, fmt.Errorf("failed querying user: %v", err)
+		return DTOMaterial{}, fmt.Errorf("failed querying material (%v): %v", uniqueCode, err)
 	}
-	log.Println("user returned: ", u)
-	return material, nil
 
+	material, err := r.repoMaterialToDto(repoMaterial)
+	if err != nil {
+		return DTOMaterial{}, err
+	}
+
+	log.Println("materials returned")
+
+	return material, nil
 }
 
-func (r repository) DeleteMaterial(_ context.Context, uniqueCode string) error {
-	_, exists := r.testData[uniqueCode]
-
-	if !exists {
-		return errors.New(fmt.Sprintf("material %s not found in the database", uniqueCode))
+func (r repository) DeleteMaterial(ctx context.Context, uniqueCode string) error {
+	client, errOpen := ent.Open("mysql", "root:RooT27134668@tcp(localhost:3306)/dev_library")
+	if errOpen != nil {
+		return errOpen
 	}
+	defer client.Close()
 
-	delete(r.testData, uniqueCode)
+	_, err := client.
+		Material.
+		Delete().
+		Where(material2.UniqueCodeEQ(uniqueCode)).
+		Exec(ctx)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
 // Books
 
-func (r repository) GetBooks(_ context.Context) ([]DTOBook, error) {
-	books := make([]DTOBook, len(r.testData))
+func (r repository) GetBooks(ctx context.Context) ([]DTOBook, error) {
+	client, errOpen := ent.Open("mysql", "root:RooT27134668@tcp(localhost:3306)/dev_library")
+	if errOpen != nil {
+		return nil, errOpen
+	}
+	defer client.Close()
 
-	idx := 0
-	for _, material := range r.testData {
-		resMaterial, err := r.getMaterial(material)
+	repoMaterials, err := client.
+		Material.
+		Query().
+		Where(material2.MaterialTypeEQ(int(BookType))).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed querying books: %v", err)
+	}
+
+	repoBooks := make([]*ent.Book, len(repoMaterials))
+
+	for idx, m := range repoMaterials {
+		repoBooks[idx], err = m.QueryBook().Only(ctx)
 		if err != nil {
-			return nil, err
-		}
-
-		if resMaterial.MaterialType == BookType {
-			books[idx] = material.(DTOBook)
-			idx++
+			return nil, errors.New("missing book for material in GetBooks")
 		}
 	}
 
-	return books[:idx], nil
+	log.Println("books returned")
+
+	var books []DTOBook
+	books, err = r.repoBooksToDto(repoMaterials, repoBooks)
+	if err != nil {
+		return nil, err
+	}
+
+	return books, nil
 }
 
-func (r repository) GetBookByCode(_ context.Context, uniqueCode string) (DTOBook, error) {
-	material, exists := r.testData[uniqueCode]
+func (r repository) GetBookByCode(ctx context.Context, uniqueCode string) (DTOBook, error) {
+	client, errOpen := ent.Open("mysql", "root:RooT27134668@tcp(localhost:3306)/dev_library")
+	if errOpen != nil {
+		return DTOBook{}, errOpen
+	}
+	defer client.Close()
 
-	if !exists {
-		return DTOBook{}, errors.New(fmt.Sprintf("book %s not found in the database", uniqueCode))
+	repoMaterial, err := client.
+		Material.
+		Query().
+		Where(material2.UniqueCodeEQ(uniqueCode)).
+		Where(material2.MaterialTypeEQ(int(BookType))).
+		Only(ctx)
+	if err != nil {
+		return DTOBook{}, fmt.Errorf("failed querying books: %v", err)
 	}
 
-	resMaterial, err := r.getMaterial(material)
+	var repoBook *ent.Book
+
+	repoBook, err = repoMaterial.QueryBook().Only(ctx)
+	if err != nil {
+		return DTOBook{}, errors.New("missing book for material in GetBookByCode")
+	}
+
+	log.Println("book returned")
+
+	var book DTOBook
+	book, err = r.repoBookToDto(repoMaterial, repoBook)
 	if err != nil {
 		return DTOBook{}, err
 	}
 
-	if resMaterial.MaterialType != BookType {
-		return DTOBook{}, errors.New(fmt.Sprintf("material %s is not a book in the database", uniqueCode))
-	}
-
-	return material.(DTOBook), nil
+	return book, nil
 }
 
-func (r repository) AddBook(_ context.Context, book DTOBook) (DTOBook, error) {
-	uniqueCode := book.UniqueCode
+func (r repository) AddBook(ctx context.Context, book DTOBook) (DTOBook, error) {
+	client, errOpen := ent.Open("mysql", "root:RooT27134668@tcp(localhost:3306)/dev_library")
+	if errOpen != nil {
+		return DTOBook{}, errOpen
+	}
+	defer client.Close()
 
-	_, exists := r.testData[uniqueCode]
-
-	if exists {
-		return DTOBook{}, errors.New(fmt.Sprintf("book %s already defined in the database", uniqueCode))
+	repoMaterial, repoBook, err := r.dtoToRepoBook(book)
+	if err != nil {
+		return DTOBook{}, err
 	}
 
-	r.testData[uniqueCode] = book
+	_, err = client.
+		Material.
+		Create().
+		SetUniqueCode(repoMaterial.UniqueCode).
+		SetName(repoMaterial.Name).
+		SetDateOfEmission(repoMaterial.DateOfEmission).
+		SetNumberOfPages(repoMaterial.NumberOfPages).
+		SetMaterialType(repoMaterial.MaterialType).
+		SetBook(repoBook).
+		Save(ctx)
+	if err != nil {
+		return DTOBook{}, fmt.Errorf("failed adding book: %v", err)
+	}
+
+	log.Println("materials saved")
 
 	return book, nil
 }
 
-func (r repository) UpdateBook(_ context.Context, uniqueCode string, book DTOBook) (DTOBook, error) {
-	objUniqueCode := book.UniqueCode
+func (r repository) UpdateBook(ctx context.Context, uniqueCode string, book DTOBook) (DTOBook, error) {
+	client, errOpen := ent.Open("mysql", "root:RooT27134668@tcp(localhost:3306)/dev_library")
+	if errOpen != nil {
+		return DTOBook{}, errOpen
+	}
+	defer client.Close()
 
-	if objUniqueCode != uniqueCode {
-		return DTOBook{}, errors.New(fmt.Sprintf("parameter unique code %s and book unique code %s do not match", uniqueCode, objUniqueCode))
+	repoMaterial, repoBook, err := r.dtoToRepoBook(book)
+	if err != nil {
+		return DTOBook{}, err
 	}
 
-	material, exists := r.testData[uniqueCode]
-
-	if !exists {
-		return DTOBook{}, errors.New(fmt.Sprintf("book %s not found in the database", uniqueCode))
+	_, err = client.
+		Material.
+		Update().
+		Where(material2.UniqueCodeEQ(uniqueCode)).
+		SetName(repoMaterial.Name).
+		SetDateOfEmission(repoMaterial.DateOfEmission).
+		SetNumberOfPages(repoMaterial.NumberOfPages).
+		SetMaterialType(repoMaterial.MaterialType).
+		SetBook(repoBook).
+		Save(ctx)
+	if err != nil {
+		return DTOBook{}, fmt.Errorf("failed updating book: %v", err)
 	}
 
-	m := material.(MaterialTyped)
-	if m.GetMaterialType() != BookType {
-		return DTOBook{}, errors.New(fmt.Sprintf("material %s is not a book in the database", uniqueCode))
-	}
-
-	r.testData[uniqueCode] = book
+	log.Println("materials updated")
 
 	return book, nil
 }
@@ -163,155 +251,37 @@ func (r repository) UpdateBook(_ context.Context, uniqueCode string, book DTOBoo
 // Newspapers
 
 func (r repository) GetNewspapers(_ context.Context) ([]DTONewspaper, error) {
-	newspapers := make([]DTONewspaper, len(r.testData))
-
-	idx := 0
-	for _, material := range r.testData {
-		resMaterial, err := r.getMaterial(material)
-		if err != nil {
-			return nil, err
-		}
-
-		if resMaterial.MaterialType == NewspaperType {
-			newspapers[idx] = material.(DTONewspaper)
-			idx++
-		}
-	}
-
-	return newspapers[:idx], nil
+	return nil, nil
 }
 
 func (r repository) GetNewspaperByCode(_ context.Context, uniqueCode string) (DTONewspaper, error) {
-	material, exists := r.testData[uniqueCode]
-
-	if !exists {
-		return DTONewspaper{}, errors.New(fmt.Sprintf("newspaper %s not found in the database", uniqueCode))
-	}
-
-	resMaterial, err := r.getMaterial(material)
-	if err != nil {
-		return DTONewspaper{}, err
-	}
-
-	if resMaterial.MaterialType != NewspaperType {
-		return DTONewspaper{}, errors.New(fmt.Sprintf("material %s is not a newspaper in the database", uniqueCode))
-	}
-
-	return material.(DTONewspaper), nil
+	return DTONewspaper{}, nil
 }
 
 func (r repository) AddNewspaper(_ context.Context, newspaper DTONewspaper) (DTONewspaper, error) {
-	uniqueCode := newspaper.UniqueCode
-
-	_, exists := r.testData[uniqueCode]
-
-	if exists {
-		return DTONewspaper{}, errors.New(fmt.Sprintf("newspaper %s already defined in the database", uniqueCode))
-	}
-
-	r.testData[uniqueCode] = newspaper
-
-	return newspaper, nil
+	return DTONewspaper{}, nil
 }
 
 func (r repository) UpdateNewspaper(_ context.Context, uniqueCode string, newspaper DTONewspaper) (DTONewspaper, error) {
-	objUniqueCode := newspaper.UniqueCode
-
-	if objUniqueCode != uniqueCode {
-		return DTONewspaper{}, errors.New(fmt.Sprintf("parameter unique code %s and newspaper unique code %s do not match", uniqueCode, objUniqueCode))
-	}
-
-	material, exists := r.testData[uniqueCode]
-
-	if !exists {
-		return DTONewspaper{}, errors.New(fmt.Sprintf("newspaper %s not found in the database", uniqueCode))
-	}
-
-	m := material.(MaterialTyped)
-	if m.GetMaterialType() != NewspaperType {
-		return DTONewspaper{}, errors.New(fmt.Sprintf("material %s is not a newspaper in the database", uniqueCode))
-	}
-
-	r.testData[uniqueCode] = newspaper
-
-	return newspaper, nil
+	return DTONewspaper{}, nil
 }
 
 // Magazines
 
 func (r repository) GetMagazines(_ context.Context) ([]DTOMagazine, error) {
-	magazines := make([]DTOMagazine, len(r.testData))
-
-	idx := 0
-	for _, material := range r.testData {
-		resMaterial, err := r.getMaterial(material)
-		if err != nil {
-			return nil, err
-		}
-
-		if resMaterial.MaterialType == MagazineType {
-			magazines[idx] = material.(DTOMagazine)
-			idx++
-		}
-	}
-
-	return magazines[:idx], nil
+	return nil, nil
 }
 
 func (r repository) GetMagazineByCode(_ context.Context, uniqueCode string) (DTOMagazine, error) {
-	material, exists := r.testData[uniqueCode]
-
-	if !exists {
-		return DTOMagazine{}, errors.New(fmt.Sprintf("magazine %s not found in the database", uniqueCode))
-	}
-
-	resMaterial, err := r.getMaterial(material)
-	if err != nil {
-		return DTOMagazine{}, err
-	}
-
-	if resMaterial.MaterialType != MagazineType {
-		return DTOMagazine{}, errors.New(fmt.Sprintf("material %s is not a magazine in the database", uniqueCode))
-	}
-
-	return material.(DTOMagazine), nil
+	return DTOMagazine{}, nil
 }
 
 func (r repository) AddMagazine(_ context.Context, magazine DTOMagazine) (DTOMagazine, error) {
-	uniqueCode := magazine.UniqueCode
-
-	_, exists := r.testData[uniqueCode]
-
-	if exists {
-		return DTOMagazine{}, errors.New(fmt.Sprintf("material %s already defined in the database", uniqueCode))
-	}
-
-	r.testData[uniqueCode] = magazine
-
-	return magazine, nil
+	return DTOMagazine{}, nil
 }
 
 func (r repository) UpdateMagazine(_ context.Context, uniqueCode string, magazine DTOMagazine) (DTOMagazine, error) {
-	objUniqueCode := magazine.UniqueCode
-
-	if objUniqueCode != uniqueCode {
-		return DTOMagazine{}, errors.New(fmt.Sprintf("parameter unique code %s and magazine unique code %s do not match", uniqueCode, objUniqueCode))
-	}
-
-	material, exists := r.testData[uniqueCode]
-
-	if !exists {
-		return DTOMagazine{}, errors.New(fmt.Sprintf("magazine %s not found in the database", uniqueCode))
-	}
-
-	m := material.(MaterialTyped)
-	if m.GetMaterialType() != MagazineType {
-		return DTOMagazine{}, errors.New(fmt.Sprintf("material %s is not a magazine in the database", uniqueCode))
-	}
-
-	r.testData[uniqueCode] = magazine
-
-	return magazine, nil
+	return DTOMagazine{}, nil
 }
 
 // Other functions
@@ -332,88 +302,154 @@ func (r repository) getMaterial(material MaterialTyped) (DTOMaterial, error) {
 	}
 }
 
-// Create fake test data
+func (r repository) materialTypeToInt(mt MaterialType) (int, error) {
+	switch mt {
+	case BookType:
+		return 0, nil
 
-func initTestData() map[string]MaterialTyped {
-	var idx int
-	var typeLabel string
-	var code string
-	materials := make(map[string]MaterialTyped, 500)
+	case MagazineType:
+		return 1, nil
 
-	for idx = 0; idx < 100; idx++ {
-		typeLabel = "Book"
-		code = initCodeTestData(idx, typeLabel)
-		materials[code] = initBookTestData(idx, typeLabel, code)
+	case NewspaperType:
+		return 2, nil
+
+	default:
+		return -1, errors.New(fmt.Sprintf("unsupported material type %d in materialTypeToInt", mt))
 	}
-
-	for idx = 0; idx < 100; idx++ {
-		typeLabel = "Newspaper"
-		code = initCodeTestData(idx, typeLabel)
-		materials[code] = initNewspaperTestData(idx, typeLabel, code)
-	}
-
-	for idx = 0; idx < 100; idx++ {
-		typeLabel = "Magazine"
-		code = initCodeTestData(idx, typeLabel)
-		materials[code] = initMagazineTestData(idx, typeLabel, code)
-	}
-
-	return materials
 }
 
-func initCodeTestData(idx int, typeLabel string) string {
-	code := fmt.Sprintf("%s_%d", typeLabel, idx)
+func (r repository) intToMaterialType(mt int) (MaterialType, error) {
+	switch mt {
+	case 0:
+		return BookType, nil
 
-	return code
+	case 1:
+		return MagazineType, nil
+
+	case 2:
+		return NewspaperType, nil
+
+	default:
+		return BookType, errors.New(fmt.Sprintf("unsupported material type %d in intToMaterialType", mt))
+	}
 }
 
-func initMaterialTestData(idx int, typeLabel string, code string, materialType MaterialType) DTOMaterial {
-	material := DTOMaterial{
-		UniqueCode:     code,
-		Name:           fmt.Sprintf("%s %d", typeLabel, idx),
-		DateOfEmission: time.Now(),
-		NumberOfPages:  500 + idx,
-		MaterialType:   materialType,
-	}
+// Materials
 
-	return material
+func (r repository) repoMaterialToDto(m *ent.Material) (DTOMaterial, error) {
+	return DTOMaterial{
+		UniqueCode:     m.UniqueCode,
+		Name:           m.Name,
+		DateOfEmission: m.DateOfEmission,
+		NumberOfPages:  m.NumberOfPages,
+		MaterialType:   MaterialType(m.MaterialType),
+	}, nil
 }
 
-func initBookTestData(idxBook int, typeLabel string, code string) DTOBook {
-	book := DTOBook{
-		DTOMaterial: initMaterialTestData(idxBook, typeLabel, code, BookType),
-		AuthorName:  fmt.Sprintf("AuthorName %d", idxBook),
-		Genre:       fmt.Sprintf("Genre %d", idxBook),
+func (r repository) repoMaterialsToDto(ms []*ent.Material) ([]DTOMaterial, error) {
+	var err error
+	dtoMaterials := make([]DTOMaterial, len(ms))
+
+	for idx, m := range ms {
+		dtoMaterials[idx], err = r.repoMaterialToDto(m)
+
+		if err != nil {
+			return nil, errors.New("invalid material object in repoMaterialsToDto")
+		}
 	}
 
-	return book
+	return dtoMaterials, nil
 }
 
-func initNewspaperTestData(idxNewspaper int, typeLabel string, code string) DTONewspaper {
-	magazine := DTONewspaper{
-		DTOMaterial: initMaterialTestData(idxNewspaper, typeLabel, code, NewspaperType),
-		Url:         fmt.Sprintf("Url %d", idxNewspaper),
-	}
-
-	return magazine
+func (r repository) dtoToRepoMaterial(m DTOMaterial) (*ent.Material, error) {
+	return &ent.Material{
+		UniqueCode:     m.UniqueCode,
+		Name:           m.Name,
+		DateOfEmission: m.DateOfEmission,
+		NumberOfPages:  m.NumberOfPages,
+		MaterialType:   int(m.MaterialType),
+	}, nil
 }
 
-func initMagazineTestData(idxMagazine int, typeLabel string, code string) DTOMagazine {
-	magazine := DTOMagazine{
-		DTOMaterial: initMaterialTestData(idxMagazine, typeLabel, code, MagazineType),
-		Sections:    initSectionsTestData(idxMagazine),
-		Url:         fmt.Sprintf("Url %d", idxMagazine),
+func (r repository) dtoToRepoMaterials(ms []DTOMaterial) ([]*ent.Material, error) {
+	var err error
+	materials := make([]*ent.Material, len(ms))
+
+	for idx, m := range ms {
+		materials[idx], err = r.dtoToRepoMaterial(m)
+
+		if err != nil {
+			return nil, errors.New("invalid material object in dtoToRepoMaterials")
+		}
+
 	}
 
-	return magazine
+	return materials, nil
 }
 
-func initSectionsTestData(idxMagazine int) []DTOSection {
-	sections := make([]DTOSection, 5)
+// Books
 
-	for idx := 0; idx < 5; idx++ {
-		sections[idx].Code = fmt.Sprintf("Section code %d %d", idxMagazine, idx)
-		sections[idx].Content = fmt.Sprintf("Section content %d %d", idxMagazine, idx)
+func (r repository) repoBookToDto(m *ent.Material, b *ent.Book) (DTOBook, error) {
+	mt, err := r.intToMaterialType(m.MaterialType)
+	if err != nil {
+		return DTOBook{}, errors.New("invalid material type in repoBookToDto")
 	}
-	return sections
+
+	return DTOBook{
+		DTOMaterial: DTOMaterial{
+			UniqueCode:     m.UniqueCode,
+			Name:           m.Name,
+			DateOfEmission: m.DateOfEmission,
+			NumberOfPages:  m.NumberOfPages,
+			MaterialType:   mt,
+		},
+		AuthorName: b.AuthorName,
+		Genre:      b.Genre,
+	}, nil
+}
+
+func (r repository) repoBooksToDto(ms []*ent.Material, b []*ent.Book) ([]DTOBook, error) {
+	var err error
+	dtoBooks := make([]DTOBook, len(ms))
+
+	for idx, m := range ms {
+		dtoBooks[idx], err = r.repoBookToDto(m, b[idx])
+
+		if err != nil {
+			return nil, errors.New("invalid book object in repoBooksToDto")
+		}
+	}
+
+	return dtoBooks, nil
+}
+
+func (r repository) dtoToRepoBook(m DTOBook) (*ent.Material, *ent.Book, error) {
+	return &ent.Material{
+			UniqueCode:     m.UniqueCode,
+			Name:           m.Name,
+			DateOfEmission: m.DateOfEmission,
+			NumberOfPages:  m.NumberOfPages,
+			MaterialType:   int(m.MaterialType),
+		},
+		&ent.Book{
+			AuthorName: m.AuthorName,
+			Genre:      m.Genre,
+		},
+		nil
+}
+
+func (r repository) dtoToRepoBooks(ms []DTOBook) ([]*ent.Material, []*ent.Book, error) {
+	var err error
+	materials := make([]*ent.Material, len(ms))
+	books := make([]*ent.Book, len(ms))
+
+	for idx, m := range ms {
+		materials[idx], books[idx], err = r.dtoToRepoBook(m)
+		if err != nil {
+			return nil, nil, errors.New("invalid material object in dtoToRepoBooks")
+		}
+
+	}
+
+	return materials, books, nil
 }

@@ -10,6 +10,12 @@ type Section struct {
 	ent.Schema
 }
 
+func (Section) Config() ent.Config {
+	return ent.Config{
+		Table: "Section",
+	}
+}
+
 // Fields of the Section.
 func (Section) Fields() []ent.Field {
 	return []ent.Field{
