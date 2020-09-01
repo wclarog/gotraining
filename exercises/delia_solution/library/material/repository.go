@@ -2,25 +2,30 @@ package material
 
 import (
 	"context"
-	"database/sql"
-	"errors"
-	"fmt"
-	uuid2 "github.com/google/uuid"
-	"strconv"
-	"time"
+	"github.com/google/uuid"
+
+	//"errors"
+	// "fmt"
+	// uuid2 "github.com/google/uuid"
+	"github.com/wclarog/exercises/delia_solution/library/ent"
+	"github.com/wclarog/exercises/delia_solution/library/ent/book"
+	"github.com/wclarog/exercises/delia_solution/library/ent/material"
+	// "strconv"
+	// "time"
 )
 
 type Repository interface {
 	GetMaterials(ctx context.Context) ([]MaterialDTO, error)
-	GetMaterialByCode(ctx context.Context, uniqueCode string) (MaterialDTO, error)
-	DeleteMaterial(ctx context.Context, uniqueCode string) error
+	GetMaterialByCode(ctx context.Context, uniqueCode uuid.UUID) (MaterialDTO, error)
+	AddMaterial(ctx context.Context, material MaterialDTO) (uuid.UUID, error)
+	DeleteMaterial(ctx context.Context, uniqueCode uuid.UUID) error
 
 	GetBooks(ctx context.Context) ([]BookDTO, error)
-	GetBookByCode(ctx context.Context, uniqueCode string) (BookDTO, error)
-	AddBook(ctx context.Context, book BookDTO) (BookDTO, error)
-	UpdateBook(ctx context.Context, uniqueCode string, book BookDTO) error
+	GetBookByCode(ctx context.Context, uniqueCode uuid.UUID) (BookDTO, error)
+	AddBook(ctx context.Context, book BookDTO) error
+	UpdateBook(ctx context.Context, uniqueCode uuid.UUID, book BookDTO) error
 
-	GetNewspapers(ctx context.Context) ([]NewsPaperDTO, error)
+	/*GetNewspapers(ctx context.Context) ([]NewsPaperDTO, error)
 	GetNewspaperByCode(ctx context.Context, uniqueCode string) (NewsPaperDTO, error)
 	AddNewspaper(ctx context.Context, newspaper NewsPaperDTO) (NewsPaperDTO, error)
 	UpdateNewspaper(ctx context.Context, uniqueCode string, newspaper NewsPaperDTO) error
@@ -28,24 +33,32 @@ type Repository interface {
 	GetMagazines(ctx context.Context) ([]MagazineDTO, error)
 	GetMagazineByCode(ctx context.Context, uniqueCode string) (MagazineDTO, error)
 	AddMagazine(ctx context.Context, magazine MagazineDTO) (MagazineDTO, error)
-	UpdateMagazine(ctx context.Context, uniqueCode string, magazine MagazineDTO) error
+	UpdateMagazine(ctx context.Context, uniqueCode string, magazine MagazineDTO) error*/
 }
 
 type repository struct {
-	db       *sql.DB
-	mockData []GenericMaterial
+	dbClient *ent.Client
+	// mockData []GenericMaterial
 }
 
-func NewRepository(db *sql.DB) Repository {
+func NewRepository(dbClient *ent.Client) Repository {
 	return &repository{
-		db:       db,
-		mockData: createMockData(),
+		dbClient: dbClient,
+		// mockData: createMockData(),
 	}
 }
 
 func (r repository) GetMaterials(ctx context.Context) ([]MaterialDTO, error) {
-
-	materials := make([]MaterialDTO, len(r.mockData))
+	var materials []MaterialDTO
+	err := r.dbClient.Material.
+		Query().
+		Select(material.FieldUniqueCode, material.FieldName, material.FieldEmissionDate, material.FieldNumberOfPages, material.FieldType).
+		Scan(ctx, &materials)
+	if err != nil {
+		return []MaterialDTO{}, err
+	}
+	return materials, nil
+	/*materials := make([]MaterialDTO, len(r.mockData))
 
 	for index, material := range r.mockData {
 		mat, err := r.getMaterial(material)
@@ -55,23 +68,43 @@ func (r repository) GetMaterials(ctx context.Context) ([]MaterialDTO, error) {
 		materials[index] = mat
 	}
 
-	return materials, nil
+	return materials, nil*/
 }
 
-func (r repository) GetMaterialByCode(ctx context.Context, uniqueCode string) (MaterialDTO, error) {
+func (r repository) GetMaterialByCode(ctx context.Context, uniqueCode uuid.UUID) (MaterialDTO, error) {
 
-	item, found := r.findItem(uniqueCode)
+	item, error := r.dbClient.Material.Query().Where(material.UniqueCodeEQ(uniqueCode)).First(ctx)
+
+	if error != nil {
+		return MaterialDTO{}, error
+	}
+
+	return MaterialDTO{
+		Id:            item.ID,
+		UniqueCode:    item.UniqueCode,
+		Name:          item.Name,
+		NumberOfPages: item.NumberOfPages,
+		EmissionDate:  item.EmissionDate,
+		Type:          BookType,
+	}, nil
+
+	/*item, found := r.findItem(uniqueCode)
 
 	if found == -1 {
 		return MaterialDTO{}, errors.New(fmt.Sprintf("Material %s not found.", uniqueCode))
 	}
 
-	return item.(MaterialDTO), nil
+	return item.(MaterialDTO), nil*/
 }
 
-func (r repository) DeleteMaterial(ctx context.Context, uniqueCode string) error {
+func (r repository) DeleteMaterial(ctx context.Context, uniqueCode uuid.UUID) error {
+	mat, error := r.dbClient.Material.Query().Where(material.UniqueCodeEQ(uniqueCode)).First(ctx)
+	if error != nil {
+		return error
+	}
+	error = r.dbClient.Material.DeleteOne(mat).Exec(ctx)
 
-	_, found := r.findItem(uniqueCode)
+	/*_, found := r.findItem(uniqueCode)
 
 	if found == -1 {
 		return errors.New(fmt.Sprintf("Material %s not found.", uniqueCode))
@@ -79,14 +112,47 @@ func (r repository) DeleteMaterial(ctx context.Context, uniqueCode string) error
 
 	copy(r.mockData[found:], r.mockData[found+1:]) // Shift a[i+1:] left one index.
 	r.mockData[len(r.mockData)-1] = MaterialDTO{}
-	r.mockData = r.mockData[:len(r.mockData)-1]
+	r.mockData = r.mockData[:len(r.mockData)-1]*/
 
-	return nil
+	return error
+}
+
+func (r repository) AddMaterial(ctx context.Context, material MaterialDTO) (uuid.UUID, error) {
+
+	code := uuid.New()
+	_, err := r.dbClient.Material.
+		Create().
+		SetUniqueCode(code).
+		SetName(material.Name).
+		SetEmissionDate(material.EmissionDate).
+		SetNumberOfPages(material.NumberOfPages).
+		SetType(int(material.Type)).
+		Save(ctx)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return code, nil
 }
 
 func (r repository) GetBooks(ctx context.Context) ([]BookDTO, error) {
 
-	books := make([]BookDTO, 0, len(r.mockData))
+	books, err := r.dbClient.Book.
+		Query().
+		// Select(book.FieldAuthor, book.FieldGenre).
+		All(ctx)
+	if err != nil {
+		return []BookDTO{}, err
+	}
+	booksDTO := make([]BookDTO, len(books))
+	for index, book := range books {
+		booksDTO[index] = BookDTO{
+			Author:      book.Author,
+			Genre:       book.Genre,
+			MaterialDTO: MaterialDTO{UniqueCode: book.UniqueCode},
+		}
+	}
+	return booksDTO, nil
+	/*books := make([]BookDTO, 0, len(r.mockData))
 
 	for _, material := range r.mockData {
 
@@ -101,45 +167,46 @@ func (r repository) GetBooks(ctx context.Context) ([]BookDTO, error) {
 		}
 	}
 
-	return books, nil
+	return books, nil*/
 }
 
-func (r repository) GetBookByCode(ctx context.Context, uniqueCode string) (BookDTO, error) {
-
-	item, found := r.findItem(uniqueCode)
-
-	if found == -1 {
-		// return BookDTO{}, errors.New(fmt.Sprintf("Book %s not found.", uniqueCode))
-		notFoundErr := NotFoundError{invalidCode: uniqueCode}
-		return BookDTO{}, &notFoundErr
+func (r repository) GetBookByCode(ctx context.Context, uniqueCode uuid.UUID) (BookDTO, error) {
+	item, error := r.dbClient.Book.Query().Where(book.UniqueCodeEQ(uniqueCode)).First(ctx)
+	if error != nil {
+		return BookDTO{}, error
 	}
-
-	if item.GetTypeMaterial() != BookType {
-		invalidTypeErr := InvalidBookTypeError{invalidCode: uniqueCode}
-		return BookDTO{}, &invalidTypeErr
-	}
-
-	return r.mockData[found].(BookDTO), nil
+	return BookDTO{
+		Author: item.Author,
+		Genre:  item.Genre,
+		MaterialDTO: MaterialDTO{
+			UniqueCode: item.UniqueCode,
+		},
+	}, nil
 }
 
-func (r repository) AddBook(ctx context.Context, book BookDTO) (BookDTO, error) {
+func (r repository) AddBook(ctx context.Context, book BookDTO) error {
 
-	uniqueCode := book.UniqueCode
-
-	_, found := r.findItem(uniqueCode)
-
-	if found != -1 {
-		return BookDTO{}, errors.New(fmt.Sprintf("Book %s already exists", uniqueCode))
-	}
-
-	r.mockData = append(r.mockData, book)
-
-	return book, nil
+	_, err := r.dbClient.Book.
+		Create().
+		SetAuthor(book.Author).
+		SetGenre(book.Genre).
+		SetUniqueCode(book.UniqueCode).
+		Save(ctx)
+	return err
 }
 
-func (r repository) UpdateBook(ctx context.Context, uniqueCode string, book BookDTO) error {
-
-	item, index := r.findItem(uniqueCode)
+func (r repository) UpdateBook(ctx context.Context, uniqueCode uuid.UUID, book BookDTO) error {
+	mat, error := r.dbClient.Material.Query().Where(material.UniqueCodeEQ(uniqueCode)).First(ctx)
+	if error != nil {
+		return error
+	}
+	_, error = r.dbClient.Book.
+		UpdateOneID(mat.ID).
+		SetGenre(book.Genre).
+		SetAuthor(book.Author).
+		Save(ctx)
+	return error
+	/*item, index := r.findItem(uniqueCode)
 
 	if index == -1 {
 		return errors.New(fmt.Sprintf("Book not found: %s", uniqueCode))
@@ -151,10 +218,10 @@ func (r repository) UpdateBook(ctx context.Context, uniqueCode string, book Book
 
 	r.mockData[index] = book
 
-	return nil
+	return nil*/
 }
 
-func (r repository) GetNewspapers(ctx context.Context) ([]NewsPaperDTO, error) {
+/*func (r repository) GetNewspapers(ctx context.Context) ([]NewsPaperDTO, error) {
 
 	newspapers := make([]NewsPaperDTO, 0, len(r.mockData))
 
@@ -286,9 +353,9 @@ func (r repository) UpdateMagazine(ctx context.Context, uniqueCode string, magaz
 	r.mockData[index] = magazine
 
 	return nil
-}
+}*/
 
-func createMockData() []GenericMaterial {
+/*func createMockData() []GenericMaterial {
 	mockMaterial := make([]GenericMaterial, 100)
 
 	for i := 0; i < len(mockMaterial); i++ {
@@ -383,9 +450,9 @@ func (r repository) getMaterial(material GenericMaterial) (MaterialDTO, error) {
 	default:
 		return MaterialDTO{}, errors.New(fmt.Sprintf("Invalid material type %d ", material.GetTypeMaterial()))
 	}
-}
+}*/
 
-func (r repository) findItem(code string) (GenericMaterial, int) {
+/*func (r repository) findItem(code string) (GenericMaterial, int) {
 	for index := range r.mockData {
 		mat, _ := r.getMaterial(r.mockData[index])
 		if mat.UniqueCode == code {
@@ -393,4 +460,4 @@ func (r repository) findItem(code string) (GenericMaterial, int) {
 		}
 	}
 	return MaterialDTO{}, -1
-}
+}*/

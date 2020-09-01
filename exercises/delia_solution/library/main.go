@@ -2,15 +2,14 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"flag"
 	"fmt"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	httptransport "github.com/go-kit/kit/transport/http"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/golang-sql/sqlexp"
 	"github.com/wclarog/exercises/delia_solution/library/config"
+	"github.com/wclarog/exercises/delia_solution/library/ent"
 	"github.com/wclarog/exercises/delia_solution/library/material"
 	"net/http"
 	"os"
@@ -35,9 +34,15 @@ func main() {
 	}()
 
 	ctx := context.Background()
-	db, _ := sql.Open(sqlexp.DialectMySQL, config.Values.DB.DB_HOST)
+	connectionString := config.Values.DB.DB_USER + ":" + config.Values.DB.DB_PASS + "@tcp(" + config.Values.DB.DB_HOST + ":" + config.Values.DB.DB_PORT + ")/" + config.Values.DB.DB_NAME + "?parseTime=true"
+	_ = level.Info(logger).Log("conn", connectionString)
+	dbClient, err := ent.Open("mysql", connectionString)
+	if err != nil {
+		_ = level.Error(logger).Log("failed opening connection to mySQL db: %v", err)
+	}
+	defer dbClient.Close()
 
-	repository := material.NewRepository(db)
+	repository := material.NewRepository(dbClient)
 	srv := material.NewService(repository, logger)
 	endpoints := material.MakeEndpoints(srv)
 
