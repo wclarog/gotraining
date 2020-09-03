@@ -322,7 +322,7 @@ func (r repository) UpdateNewspaper(ctx context.Context, uniqueCode string, news
 	}
 
 	//var updatedCount int
-	_, err = r.client.
+	_, err = tx.
 		Material.
 		Update().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
@@ -336,7 +336,7 @@ func (r repository) UpdateNewspaper(ctx context.Context, uniqueCode string, news
 		return DTONewspaper{}, rollback(tx, fmt.Errorf("failed updating newspaper (material): %v", err))
 	}
 
-	_, err = r.client.
+	_, err = tx.
 		Newspaper.
 		Update().
 		Where(newspaper2.HasRelatedMaterialWith(material2.UniqueCodeEQ(uniqueCode))).
@@ -363,7 +363,7 @@ func (r repository) GetMagazines(ctx context.Context) ([]DTOMagazine, error) {
 		Material.
 		Query().
 		Where(material2.MaterialTypeEQ(int(MagazineType))).
-		WithMagazine().
+		WithMagazine(func(query *ent.MagazineQuery) { query.WithSection() }).
 		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed querying magazines: %v", err)
@@ -403,7 +403,7 @@ func (r repository) getRepoMagazineByCode(ctx context.Context, uniqueCode string
 		Query().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
 		Where(material2.MaterialTypeEQ(int(MagazineType))).
-		WithMagazine().
+		WithMagazine(func(query *ent.MagazineQuery) { query.WithSection() }).
 		Only(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed querying magazine by code: %v", err)
@@ -696,6 +696,13 @@ func (r repository) repoMagazineToDto(m *ent.Material) (DTOMagazine, error) {
 	}
 
 	magazine := m.Edges.Magazine
+	sections := magazine.Edges.Section
+
+	var dtoSections []DTOSection
+	dtoSections, err = r.repoSectionsToDto(sections)
+	if err != nil {
+		return DTOMagazine{}, err
+	}
 
 	return DTOMagazine{
 		DTOMaterial: DTOMaterial{
@@ -705,7 +712,8 @@ func (r repository) repoMagazineToDto(m *ent.Material) (DTOMagazine, error) {
 			NumberOfPages:  m.NumberOfPages,
 			MaterialType:   mt,
 		},
-		Url: magazine.URL,
+		Url:      magazine.URL,
+		Sections: dtoSections,
 	}, nil
 }
 
@@ -722,6 +730,28 @@ func (r repository) repoMagazinesToDto(ms []*ent.Material) ([]DTOMagazine, error
 	}
 
 	return dtoMagazines, nil
+}
+
+func (r repository) repoSectionToDto(s *ent.Section) (DTOSection, error) {
+	return DTOSection{
+		Code:    s.Code,
+		Content: s.Content,
+	}, nil
+}
+
+func (r repository) repoSectionsToDto(ss []*ent.Section) ([]DTOSection, error) {
+	var err error
+	dtoSections := make([]DTOSection, len(ss))
+
+	for idx, s := range ss {
+		dtoSections[idx], err = r.repoSectionToDto(s)
+
+		if err != nil {
+			return nil, errors.New("invalid section object in repoSectionsToDto")
+		}
+	}
+
+	return dtoSections, nil
 }
 
 // rollback calls to tx.Rollback and wraps the given error with the rollback error if occurred.
