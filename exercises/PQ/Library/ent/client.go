@@ -692,6 +692,22 @@ func (c *SectionClient) GetX(ctx context.Context, id int) *Section {
 	return s
 }
 
+// QueryRelatedMagazine queries the relatedMagazine edge of a Section.
+func (c *SectionClient) QueryRelatedMagazine(s *Section) *MagazineQuery {
+	query := &MagazineQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(section.Table, section.FieldID, id),
+			sqlgraph.To(magazine.Table, magazine.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, section.RelatedMagazineTable, section.RelatedMagazineColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *SectionClient) Hooks() []Hook {
 	return c.hooks.Section

@@ -2,6 +2,7 @@ package schema
 
 import (
 	"github.com/facebook/ent"
+	"github.com/facebook/ent/schema/edge"
 	"github.com/facebook/ent/schema/field"
 )
 
@@ -26,5 +27,14 @@ func (Section) Fields() []ent.Field {
 
 // Edges of the Section.
 func (Section) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		// Create an inverse-edge called "relatedMagazine" of type `Magazine`
+		// and reference it to the "Magazine" edge (in Magazine schema)
+		// explicitly using the `Ref` method.
+		edge.From("relatedMagazine", Magazine.Type).
+			Ref("Section").
+			// setting the edge to unique, ensure
+			// that a section can have only one magazine.
+			Unique(),
+	}
 }

@@ -33,7 +33,7 @@ func (Newspaper) Edges() []ent.Edge {
 		edge.From("relatedMaterial", Material.Type).
 			Ref("Newspaper").
 			// setting the edge to unique, ensure
-			// that a book can have only one material.
+			// that a newspaper can have only one material.
 			Unique(),
 	}
 }

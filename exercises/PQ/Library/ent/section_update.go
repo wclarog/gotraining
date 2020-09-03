@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"excercise-library/ent/magazine"
 	"excercise-library/ent/predicate"
 	"excercise-library/ent/section"
 	"fmt"
@@ -39,13 +40,39 @@ func (su *SectionUpdate) SetContent(s string) *SectionUpdate {
 	return su
 }
 
+// SetRelatedMagazineID sets the relatedMagazine edge to Magazine by id.
+func (su *SectionUpdate) SetRelatedMagazineID(id int) *SectionUpdate {
+	su.mutation.SetRelatedMagazineID(id)
+	return su
+}
+
+// SetNillableRelatedMagazineID sets the relatedMagazine edge to Magazine by id if the given value is not nil.
+func (su *SectionUpdate) SetNillableRelatedMagazineID(id *int) *SectionUpdate {
+	if id != nil {
+		su = su.SetRelatedMagazineID(*id)
+	}
+	return su
+}
+
+// SetRelatedMagazine sets the relatedMagazine edge to Magazine.
+func (su *SectionUpdate) SetRelatedMagazine(m *Magazine) *SectionUpdate {
+	return su.SetRelatedMagazineID(m.ID)
+}
+
 // Mutation returns the SectionMutation object of the builder.
 func (su *SectionUpdate) Mutation() *SectionMutation {
 	return su.mutation
 }
 
+// ClearRelatedMagazine clears the relatedMagazine edge to Magazine.
+func (su *SectionUpdate) ClearRelatedMagazine() *SectionUpdate {
+	su.mutation.ClearRelatedMagazine()
+	return su
+}
+
 // Save executes the query and returns the number of rows/vertices matched by this operation.
 func (su *SectionUpdate) Save(ctx context.Context) (int, error) {
+
 	var (
 		err      error
 		affected int
@@ -127,6 +154,41 @@ func (su *SectionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: section.FieldContent,
 		})
 	}
+	if su.mutation.RelatedMagazineCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   section.RelatedMagazineTable,
+			Columns: []string{section.RelatedMagazineColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: magazine.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.RelatedMagazineIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   section.RelatedMagazineTable,
+			Columns: []string{section.RelatedMagazineColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: magazine.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, su.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{section.Label}
@@ -157,13 +219,39 @@ func (suo *SectionUpdateOne) SetContent(s string) *SectionUpdateOne {
 	return suo
 }
 
+// SetRelatedMagazineID sets the relatedMagazine edge to Magazine by id.
+func (suo *SectionUpdateOne) SetRelatedMagazineID(id int) *SectionUpdateOne {
+	suo.mutation.SetRelatedMagazineID(id)
+	return suo
+}
+
+// SetNillableRelatedMagazineID sets the relatedMagazine edge to Magazine by id if the given value is not nil.
+func (suo *SectionUpdateOne) SetNillableRelatedMagazineID(id *int) *SectionUpdateOne {
+	if id != nil {
+		suo = suo.SetRelatedMagazineID(*id)
+	}
+	return suo
+}
+
+// SetRelatedMagazine sets the relatedMagazine edge to Magazine.
+func (suo *SectionUpdateOne) SetRelatedMagazine(m *Magazine) *SectionUpdateOne {
+	return suo.SetRelatedMagazineID(m.ID)
+}
+
 // Mutation returns the SectionMutation object of the builder.
 func (suo *SectionUpdateOne) Mutation() *SectionMutation {
 	return suo.mutation
 }
 
+// ClearRelatedMagazine clears the relatedMagazine edge to Magazine.
+func (suo *SectionUpdateOne) ClearRelatedMagazine() *SectionUpdateOne {
+	suo.mutation.ClearRelatedMagazine()
+	return suo
+}
+
 // Save executes the query and returns the updated entity.
 func (suo *SectionUpdateOne) Save(ctx context.Context) (*Section, error) {
+
 	var (
 		err  error
 		node *Section
@@ -242,6 +330,41 @@ func (suo *SectionUpdateOne) sqlSave(ctx context.Context) (s *Section, err error
 			Value:  value,
 			Column: section.FieldContent,
 		})
+	}
+	if suo.mutation.RelatedMagazineCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   section.RelatedMagazineTable,
+			Columns: []string{section.RelatedMagazineColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: magazine.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.RelatedMagazineIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   section.RelatedMagazineTable,
+			Columns: []string{section.RelatedMagazineColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: magazine.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	s = &Section{config: suo.config}
 	_spec.Assign = s.assignValues

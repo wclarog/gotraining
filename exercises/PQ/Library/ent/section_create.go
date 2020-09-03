@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"errors"
+	"excercise-library/ent/magazine"
 	"excercise-library/ent/section"
 	"fmt"
 
@@ -29,6 +30,25 @@ func (sc *SectionCreate) SetCode(s string) *SectionCreate {
 func (sc *SectionCreate) SetContent(s string) *SectionCreate {
 	sc.mutation.SetContent(s)
 	return sc
+}
+
+// SetRelatedMagazineID sets the relatedMagazine edge to Magazine by id.
+func (sc *SectionCreate) SetRelatedMagazineID(id int) *SectionCreate {
+	sc.mutation.SetRelatedMagazineID(id)
+	return sc
+}
+
+// SetNillableRelatedMagazineID sets the relatedMagazine edge to Magazine by id if the given value is not nil.
+func (sc *SectionCreate) SetNillableRelatedMagazineID(id *int) *SectionCreate {
+	if id != nil {
+		sc = sc.SetRelatedMagazineID(*id)
+	}
+	return sc
+}
+
+// SetRelatedMagazine sets the relatedMagazine edge to Magazine.
+func (sc *SectionCreate) SetRelatedMagazine(m *Magazine) *SectionCreate {
+	return sc.SetRelatedMagazineID(m.ID)
 }
 
 // Mutation returns the SectionMutation object of the builder.
@@ -126,6 +146,25 @@ func (sc *SectionCreate) createSpec() (*Section, *sqlgraph.CreateSpec) {
 			Column: section.FieldContent,
 		})
 		s.Content = value
+	}
+	if nodes := sc.mutation.RelatedMagazineIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   section.RelatedMagazineTable,
+			Columns: []string{section.RelatedMagazineColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: magazine.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return s, _spec
 }

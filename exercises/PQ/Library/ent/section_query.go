@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"errors"
+	"excercise-library/ent/magazine"
 	"excercise-library/ent/predicate"
 	"excercise-library/ent/section"
 	"fmt"
@@ -23,7 +24,9 @@ type SectionQuery struct {
 	order      []OrderFunc
 	unique     []string
 	predicates []predicate.Section
-	withFKs    bool
+	// eager-loading edges.
+	withRelatedMagazine *MagazineQuery
+	withFKs             bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -51,6 +54,24 @@ func (sq *SectionQuery) Offset(offset int) *SectionQuery {
 func (sq *SectionQuery) Order(o ...OrderFunc) *SectionQuery {
 	sq.order = append(sq.order, o...)
 	return sq
+}
+
+// QueryRelatedMagazine chains the current query on the relatedMagazine edge.
+func (sq *SectionQuery) QueryRelatedMagazine() *MagazineQuery {
+	query := &MagazineQuery{config: sq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(section.Table, section.FieldID, sq.sqlQuery()),
+			sqlgraph.To(magazine.Table, magazine.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, section.RelatedMagazineTable, section.RelatedMagazineColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Section entity in the query. Returns *NotFoundError when no section was found.
@@ -232,6 +253,17 @@ func (sq *SectionQuery) Clone() *SectionQuery {
 	}
 }
 
+//  WithRelatedMagazine tells the query-builder to eager-loads the nodes that are connected to
+// the "relatedMagazine" edge. The optional arguments used to configure the query builder of the edge.
+func (sq *SectionQuery) WithRelatedMagazine(opts ...func(*MagazineQuery)) *SectionQuery {
+	query := &MagazineQuery{config: sq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withRelatedMagazine = query
+	return sq
+}
+
 // GroupBy used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -296,10 +328,16 @@ func (sq *SectionQuery) prepareQuery(ctx context.Context) error {
 
 func (sq *SectionQuery) sqlAll(ctx context.Context) ([]*Section, error) {
 	var (
-		nodes   = []*Section{}
-		withFKs = sq.withFKs
-		_spec   = sq.querySpec()
+		nodes       = []*Section{}
+		withFKs     = sq.withFKs
+		_spec       = sq.querySpec()
+		loadedTypes = [1]bool{
+			sq.withRelatedMagazine != nil,
+		}
 	)
+	if sq.withRelatedMagazine != nil {
+		withFKs = true
+	}
 	if withFKs {
 		_spec.Node.Columns = append(_spec.Node.Columns, section.ForeignKeys...)
 	}
@@ -317,6 +355,7 @@ func (sq *SectionQuery) sqlAll(ctx context.Context) ([]*Section, error) {
 			return fmt.Errorf("ent: Assign called without calling ScanValues")
 		}
 		node := nodes[len(nodes)-1]
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(values...)
 	}
 	if err := sqlgraph.QueryNodes(ctx, sq.driver, _spec); err != nil {
@@ -325,6 +364,32 @@ func (sq *SectionQuery) sqlAll(ctx context.Context) ([]*Section, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+
+	if query := sq.withRelatedMagazine; query != nil {
+		ids := make([]int, 0, len(nodes))
+		nodeids := make(map[int][]*Section)
+		for i := range nodes {
+			if fk := nodes[i].magazine_section; fk != nil {
+				ids = append(ids, *fk)
+				nodeids[*fk] = append(nodeids[*fk], nodes[i])
+			}
+		}
+		query.Where(magazine.IDIn(ids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := nodeids[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "magazine_section" returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.RelatedMagazine = n
+			}
+		}
+	}
+
 	return nodes, nil
 }
 

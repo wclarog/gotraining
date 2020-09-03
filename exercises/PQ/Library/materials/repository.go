@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 	"excercise-library/ent"
+	book2 "excercise-library/ent/book"
+	magazine2 "excercise-library/ent/magazine"
 	material2 "excercise-library/ent/material"
+	newspaper2 "excercise-library/ent/newspaper"
 	"fmt"
 	"log"
 	//"time"
@@ -119,15 +122,9 @@ func (r repository) GetBooks(ctx context.Context) ([]DTOBook, error) {
 }
 
 func (r repository) GetBookByCode(ctx context.Context, uniqueCode string) (DTOBook, error) {
-	repoBook, err := r.client.
-		Material.
-		Query().
-		Where(material2.UniqueCodeEQ(uniqueCode)).
-		Where(material2.MaterialTypeEQ(int(BookType))).
-		WithBook().
-		Only(ctx)
+	repoBook, err := r.getRepoBookByCode(ctx, uniqueCode)
 	if err != nil {
-		return DTOBook{}, fmt.Errorf("failed querying books: %v", err)
+		return DTOBook{}, fmt.Errorf("failed querying book: %v", err)
 	}
 
 	log.Println("book returned")
@@ -141,8 +138,29 @@ func (r repository) GetBookByCode(ctx context.Context, uniqueCode string) (DTOBo
 	return book, nil
 }
 
+func (r repository) getRepoBookByCode(ctx context.Context, uniqueCode string) (*ent.Material, error) {
+	repoBook, err := r.client.
+		Material.
+		Query().
+		Where(material2.UniqueCodeEQ(uniqueCode)).
+		Where(material2.MaterialTypeEQ(int(BookType))).
+		WithBook().
+		Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed querying book by code: %v", err)
+	}
+
+	return repoBook, nil
+}
+
 func (r repository) AddBook(ctx context.Context, book DTOBook) (DTOBook, error) {
-	_, err := r.client.
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return DTOBook{}, fmt.Errorf("starting a transaction: %v", err)
+	}
+
+	var repoMaterial *ent.Material
+	repoMaterial, err = tx.
 		Material.
 		Create().
 		SetUniqueCode(book.UniqueCode).
@@ -150,10 +168,25 @@ func (r repository) AddBook(ctx context.Context, book DTOBook) (DTOBook, error) 
 		SetDateOfEmission(book.DateOfEmission).
 		SetNumberOfPages(book.NumberOfPages).
 		SetMaterialType(int(book.MaterialType)).
-		//SetBook(repoBook).
 		Save(ctx)
 	if err != nil {
-		return DTOBook{}, fmt.Errorf("failed adding book: %v", err)
+		return DTOBook{}, rollback(tx, fmt.Errorf("failed adding book (material): %v", err))
+	}
+
+	_, err = tx.
+		Book.
+		Create().
+		SetAuthorName(book.AuthorName).
+		SetGenre(book.Genre).
+		SetRelatedMaterialID(repoMaterial.ID).
+		Save(ctx)
+	if err != nil {
+		return DTOBook{}, rollback(tx, fmt.Errorf("failed adding book (book): %v", err))
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return DTOBook{}, err
 	}
 
 	log.Println("book saved")
@@ -162,19 +195,45 @@ func (r repository) AddBook(ctx context.Context, book DTOBook) (DTOBook, error) 
 }
 
 func (r repository) UpdateBook(ctx context.Context, uniqueCode string, book DTOBook) (DTOBook, error) {
-	_, err := r.client.
+	repoBook, err := r.getRepoBookByCode(ctx, uniqueCode)
+	if err != nil {
+		return DTOBook{}, fmt.Errorf("getting book for update: %v", err)
+	}
+
+	var tx *ent.Tx
+	tx, err = r.client.Tx(ctx)
+	if err != nil {
+		return DTOBook{}, fmt.Errorf("starting a transaction: %v", err)
+	}
+
+	//var updatedCount int
+	_, err = tx.
 		Material.
 		Update().
-		Where(material2.UniqueCodeEQ(uniqueCode)).
-		Where(material2.MaterialTypeEQ(int(BookType))).
+		Where(material2.IDEQ(repoBook.ID)).
 		SetName(book.Name).
 		SetDateOfEmission(book.DateOfEmission).
 		SetNumberOfPages(book.NumberOfPages).
 		SetMaterialType(int(book.MaterialType)).
-		//SetBook(repoBook).
 		Save(ctx)
 	if err != nil {
-		return DTOBook{}, fmt.Errorf("failed updating book: %v", err)
+		return DTOBook{}, rollback(tx, fmt.Errorf("failed updating book (material): %v", err))
+	}
+
+	_, err = tx.
+		Book.
+		Update().
+		Where(book2.IDEQ(repoBook.Edges.Book.ID)).
+		SetAuthorName(book.AuthorName).
+		SetGenre(book.Genre).
+		Save(ctx)
+	if err != nil {
+		return DTOBook{}, rollback(tx, fmt.Errorf("failed updating book (book): %v", err))
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return DTOBook{}, err
 	}
 
 	log.Println("book updated")
@@ -207,15 +266,9 @@ func (r repository) GetNewspapers(ctx context.Context) ([]DTONewspaper, error) {
 }
 
 func (r repository) GetNewspaperByCode(ctx context.Context, uniqueCode string) (DTONewspaper, error) {
-	repoNewspaper, err := r.client.
-		Material.
-		Query().
-		Where(material2.UniqueCodeEQ(uniqueCode)).
-		Where(material2.MaterialTypeEQ(int(NewspaperType))).
-		WithNewspaper().
-		Only(ctx)
+	repoNewspaper, err := r.getRepoNewspaperByCode(ctx, uniqueCode)
 	if err != nil {
-		return DTONewspaper{}, fmt.Errorf("failed querying newspapers: %v", err)
+		return DTONewspaper{}, fmt.Errorf("failed querying newspaper: %v", err)
 	}
 
 	log.Println("newspaper returned")
@@ -229,8 +282,29 @@ func (r repository) GetNewspaperByCode(ctx context.Context, uniqueCode string) (
 	return newspaper, nil
 }
 
+func (r repository) getRepoNewspaperByCode(ctx context.Context, uniqueCode string) (*ent.Material, error) {
+	repoNewspaper, err := r.client.
+		Material.
+		Query().
+		Where(material2.UniqueCodeEQ(uniqueCode)).
+		Where(material2.MaterialTypeEQ(int(NewspaperType))).
+		WithNewspaper().
+		Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed querying newspaper by code: %v", err)
+	}
+
+	return repoNewspaper, nil
+}
+
 func (r repository) AddNewspaper(ctx context.Context, newspaper DTONewspaper) (DTONewspaper, error) {
-	_, err := r.client.
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return DTONewspaper{}, fmt.Errorf("starting a transaction: %v", err)
+	}
+
+	var repoMaterial *ent.Material
+	repoMaterial, err = tx.
 		Material.
 		Create().
 		SetUniqueCode(newspaper.UniqueCode).
@@ -238,10 +312,24 @@ func (r repository) AddNewspaper(ctx context.Context, newspaper DTONewspaper) (D
 		SetDateOfEmission(newspaper.DateOfEmission).
 		SetNumberOfPages(newspaper.NumberOfPages).
 		SetMaterialType(int(newspaper.MaterialType)).
-		//SetNewspaper(newspaper).
 		Save(ctx)
 	if err != nil {
-		return DTONewspaper{}, fmt.Errorf("failed adding book: %v", err)
+		return DTONewspaper{}, rollback(tx, fmt.Errorf("failed adding newspaper (material): %v", err))
+	}
+
+	_, err = tx.
+		Newspaper.
+		Create().
+		SetURL(newspaper.Url).
+		SetRelatedMaterialID(repoMaterial.ID).
+		Save(ctx)
+	if err != nil {
+		return DTONewspaper{}, rollback(tx, fmt.Errorf("failed adding newspaper (newspaper): %v", err))
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return DTONewspaper{}, err
 	}
 
 	log.Println("newspaper saved")
@@ -250,19 +338,44 @@ func (r repository) AddNewspaper(ctx context.Context, newspaper DTONewspaper) (D
 }
 
 func (r repository) UpdateNewspaper(ctx context.Context, uniqueCode string, newspaper DTONewspaper) (DTONewspaper, error) {
-	_, err := r.client.
+	repoNewspaper, err := r.getRepoNewspaperByCode(ctx, uniqueCode)
+	if err != nil {
+		return DTONewspaper{}, fmt.Errorf("getting newspaper for update: %v", err)
+	}
+
+	var tx *ent.Tx
+	tx, err = r.client.Tx(ctx)
+	if err != nil {
+		return DTONewspaper{}, fmt.Errorf("starting a transaction: %v", err)
+	}
+
+	//var updatedCount int
+	_, err = r.client.
 		Material.
 		Update().
-		Where(material2.UniqueCodeEQ(uniqueCode)).
-		Where(material2.MaterialTypeEQ(int(NewspaperType))).
+		Where(material2.IDEQ(repoNewspaper.ID)).
 		SetName(newspaper.Name).
 		SetDateOfEmission(newspaper.DateOfEmission).
 		SetNumberOfPages(newspaper.NumberOfPages).
 		SetMaterialType(int(newspaper.MaterialType)).
-		//SetNewspaper(newspaper).
 		Save(ctx)
 	if err != nil {
-		return DTONewspaper{}, fmt.Errorf("failed updating newspaper: %v", err)
+		return DTONewspaper{}, rollback(tx, fmt.Errorf("failed updating newspaper (material): %v", err))
+	}
+
+	_, err = r.client.
+		Newspaper.
+		Update().
+		Where(newspaper2.IDEQ(repoNewspaper.Edges.Newspaper.ID)).
+		SetURL(newspaper.Url).
+		Save(ctx)
+	if err != nil {
+		return DTONewspaper{}, rollback(tx, fmt.Errorf("failed updating newspaper (newspaper): %v", err))
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return DTONewspaper{}, err
 	}
 
 	log.Println("newspaper updated")
@@ -303,7 +416,7 @@ func (r repository) GetMagazineByCode(ctx context.Context, uniqueCode string) (D
 		WithMagazine().
 		Only(ctx)
 	if err != nil {
-		return DTOMagazine{}, fmt.Errorf("failed querying magazines: %v", err)
+		return DTOMagazine{}, fmt.Errorf("failed querying magazine: %v", err)
 	}
 
 	log.Println("magazine returned")
@@ -317,8 +430,29 @@ func (r repository) GetMagazineByCode(ctx context.Context, uniqueCode string) (D
 	return magazine, nil
 }
 
+func (r repository) getRepoMagazineByCode(ctx context.Context, uniqueCode string) (*ent.Material, error) {
+	repoMagazine, err := r.client.
+		Material.
+		Query().
+		Where(material2.UniqueCodeEQ(uniqueCode)).
+		Where(material2.MaterialTypeEQ(int(NewspaperType))).
+		WithMagazine().
+		Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed querying magazine by code: %v", err)
+	}
+
+	return repoMagazine, nil
+}
+
 func (r repository) AddMagazine(ctx context.Context, magazine DTOMagazine) (DTOMagazine, error) {
-	_, err := r.client.
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return DTOMagazine{}, fmt.Errorf("starting a transaction: %v", err)
+	}
+
+	var repoMaterial *ent.Material
+	repoMaterial, err = tx.
 		Material.
 		Create().
 		SetUniqueCode(magazine.UniqueCode).
@@ -326,10 +460,38 @@ func (r repository) AddMagazine(ctx context.Context, magazine DTOMagazine) (DTOM
 		SetDateOfEmission(magazine.DateOfEmission).
 		SetNumberOfPages(magazine.NumberOfPages).
 		SetMaterialType(int(magazine.MaterialType)).
-		//SetMagazine(repoMagazine).
 		Save(ctx)
 	if err != nil {
-		return DTOMagazine{}, fmt.Errorf("failed adding magazine: %v", err)
+		return DTOMagazine{}, rollback(tx, fmt.Errorf("failed adding magazine (material): %v", err))
+	}
+
+	var repoMagazine *ent.Magazine
+	repoMagazine, err = tx.
+		Magazine.
+		Create().
+		SetURL(magazine.Url).
+		SetRelatedMaterialID(repoMaterial.ID).
+		Save(ctx)
+	if err != nil {
+		return DTOMagazine{}, rollback(tx, fmt.Errorf("failed adding magazine (magazine): %v", err))
+	}
+
+	for _, s := range magazine.Sections {
+		_, err = r.client.
+			Section.
+			Create().
+			SetCode(s.Code).
+			SetContent(s.Content).
+			SetRelatedMagazineID(repoMagazine.ID).
+			Save(ctx)
+		if err != nil {
+			return DTOMagazine{}, rollback(tx, fmt.Errorf("failed adding magazine (section): %v", err))
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return DTOMagazine{}, err
 	}
 
 	log.Println("magazine saved")
@@ -338,19 +500,44 @@ func (r repository) AddMagazine(ctx context.Context, magazine DTOMagazine) (DTOM
 }
 
 func (r repository) UpdateMagazine(ctx context.Context, uniqueCode string, magazine DTOMagazine) (DTOMagazine, error) {
-	_, err := r.client.
+	repoMagazine, err := r.getRepoBookByCode(ctx, uniqueCode)
+	if err != nil {
+		return DTOMagazine{}, fmt.Errorf("getting magazine for update: %v", err)
+	}
+
+	var tx *ent.Tx
+	tx, err = r.client.Tx(ctx)
+	if err != nil {
+		return DTOMagazine{}, fmt.Errorf("starting a transaction: %v", err)
+	}
+
+	//var updatedCount int
+	_, err = tx.
 		Material.
 		Update().
-		Where(material2.UniqueCodeEQ(uniqueCode)).
-		Where(material2.MaterialTypeEQ(int(MagazineType))).
+		Where(material2.IDEQ(repoMagazine.ID)).
 		SetName(magazine.Name).
 		SetDateOfEmission(magazine.DateOfEmission).
 		SetNumberOfPages(magazine.NumberOfPages).
 		SetMaterialType(int(magazine.MaterialType)).
-		//SetMagazine(magazine).
 		Save(ctx)
 	if err != nil {
-		return DTOMagazine{}, fmt.Errorf("failed updating magazine: %v", err)
+		return DTOMagazine{}, rollback(tx, fmt.Errorf("failed updating magazine (material): %v", err))
+	}
+
+	_, err = tx.
+		Magazine.
+		Update().
+		Where(magazine2.IDEQ(repoMagazine.Edges.Magazine.ID)).
+		SetURL(magazine.Url).
+		Save(ctx)
+	if err != nil {
+		return DTOMagazine{}, rollback(tx, fmt.Errorf("failed updating magazine (magazine): %v", err))
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return DTOMagazine{}, err
 	}
 
 	log.Println("magazine updated")
@@ -545,4 +732,12 @@ func (r repository) repoMagazinesToDto(ms []*ent.Material) ([]DTOMagazine, error
 	}
 
 	return dtoMagazines, nil
+}
+
+// rollback calls to tx.Rollback and wraps the given error with the rollback error if occurred.
+func rollback(tx *ent.Tx, err error) error {
+	if rollErr := tx.Rollback(); rollErr != nil {
+		err = fmt.Errorf("%v: %v", err, rollErr)
+	}
+	return err
 }

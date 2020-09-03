@@ -12,8 +12,18 @@ const (
 	// FieldContent holds the string denoting the content field in the database.
 	FieldContent = "content"
 
+	// EdgeRelatedMagazine holds the string denoting the relatedmagazine edge name in mutations.
+	EdgeRelatedMagazine = "relatedMagazine"
+
 	// Table holds the table name of the section in the database.
 	Table = "Section"
+	// RelatedMagazineTable is the table the holds the relatedMagazine relation/edge.
+	RelatedMagazineTable = "Section"
+	// RelatedMagazineInverseTable is the table name for the Magazine entity.
+	// It exists in this package in order to avoid circular dependency with the "magazine" package.
+	RelatedMagazineInverseTable = "Magazine"
+	// RelatedMagazineColumn is the table column denoting the relatedMagazine relation/edge.
+	RelatedMagazineColumn = "magazine_section"
 )
 
 // Columns holds all SQL columns for section fields.

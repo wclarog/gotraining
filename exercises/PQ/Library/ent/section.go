@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"excercise-library/ent/magazine"
 	"excercise-library/ent/section"
 	"fmt"
 	"strings"
@@ -18,8 +19,34 @@ type Section struct {
 	// Code holds the value of the "code" field.
 	Code string `json:"code,omitempty"`
 	// Content holds the value of the "content" field.
-	Content          string `json:"content,omitempty"`
+	Content string `json:"content,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the SectionQuery when eager-loading is set.
+	Edges            SectionEdges `json:"edges"`
 	magazine_section *int
+}
+
+// SectionEdges holds the relations/edges for other nodes in the graph.
+type SectionEdges struct {
+	// RelatedMagazine holds the value of the relatedMagazine edge.
+	RelatedMagazine *Magazine
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// RelatedMagazineOrErr returns the RelatedMagazine value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e SectionEdges) RelatedMagazineOrErr() (*Magazine, error) {
+	if e.loadedTypes[0] {
+		if e.RelatedMagazine == nil {
+			// The edge relatedMagazine was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: magazine.Label}
+		}
+		return e.RelatedMagazine, nil
+	}
+	return nil, &NotLoadedError{edge: "relatedMagazine"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -70,6 +97,11 @@ func (s *Section) assignValues(values ...interface{}) error {
 		}
 	}
 	return nil
+}
+
+// QueryRelatedMagazine queries the relatedMagazine edge of the Section.
+func (s *Section) QueryRelatedMagazine() *MagazineQuery {
+	return (&SectionClient{config: s.config}).QueryRelatedMagazine(s)
 }
 
 // Update returns a builder for updating this Section.

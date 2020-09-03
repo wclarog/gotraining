@@ -6,6 +6,7 @@ import (
 	"excercise-library/ent/predicate"
 
 	"github.com/facebook/ent/dialect/sql"
+	"github.com/facebook/ent/dialect/sql/sqlgraph"
 )
 
 // ID filters vertices based on their identifier.
@@ -324,6 +325,34 @@ func ContentEqualFold(v string) predicate.Section {
 func ContentContainsFold(v string) predicate.Section {
 	return predicate.Section(func(s *sql.Selector) {
 		s.Where(sql.ContainsFold(s.C(FieldContent), v))
+	})
+}
+
+// HasRelatedMagazine applies the HasEdge predicate on the "relatedMagazine" edge.
+func HasRelatedMagazine() predicate.Section {
+	return predicate.Section(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(RelatedMagazineTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, RelatedMagazineTable, RelatedMagazineColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRelatedMagazineWith applies the HasEdge predicate on the "relatedMagazine" edge with a given conditions (other predicates).
+func HasRelatedMagazineWith(preds ...predicate.Magazine) predicate.Section {
+	return predicate.Section(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(RelatedMagazineInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, RelatedMagazineTable, RelatedMagazineColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
 	})
 }
 

@@ -2011,14 +2011,16 @@ func (m *NewspaperMutation) ResetEdge(name string) error {
 // nodes in the graph.
 type SectionMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	code          *string
-	content       *string
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*Section, error)
+	op                     Op
+	typ                    string
+	id                     *int
+	code                   *string
+	content                *string
+	clearedFields          map[string]struct{}
+	relatedMagazine        *int
+	clearedrelatedMagazine bool
+	done                   bool
+	oldValue               func(context.Context) (*Section, error)
 }
 
 var _ ent.Mutation = (*SectionMutation)(nil)
@@ -2174,6 +2176,45 @@ func (m *SectionMutation) ResetContent() {
 	m.content = nil
 }
 
+// SetRelatedMagazineID sets the relatedMagazine edge to Magazine by id.
+func (m *SectionMutation) SetRelatedMagazineID(id int) {
+	m.relatedMagazine = &id
+}
+
+// ClearRelatedMagazine clears the relatedMagazine edge to Magazine.
+func (m *SectionMutation) ClearRelatedMagazine() {
+	m.clearedrelatedMagazine = true
+}
+
+// RelatedMagazineCleared returns if the edge relatedMagazine was cleared.
+func (m *SectionMutation) RelatedMagazineCleared() bool {
+	return m.clearedrelatedMagazine
+}
+
+// RelatedMagazineID returns the relatedMagazine id in the mutation.
+func (m *SectionMutation) RelatedMagazineID() (id int, exists bool) {
+	if m.relatedMagazine != nil {
+		return *m.relatedMagazine, true
+	}
+	return
+}
+
+// RelatedMagazineIDs returns the relatedMagazine ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// RelatedMagazineID instead. It exists only for internal usage by the builders.
+func (m *SectionMutation) RelatedMagazineIDs() (ids []int) {
+	if id := m.relatedMagazine; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetRelatedMagazine reset all changes of the "relatedMagazine" edge.
+func (m *SectionMutation) ResetRelatedMagazine() {
+	m.relatedMagazine = nil
+	m.clearedrelatedMagazine = false
+}
+
 // Op returns the operation name.
 func (m *SectionMutation) Op() Op {
 	return m.op
@@ -2306,45 +2347,68 @@ func (m *SectionMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *SectionMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.relatedMagazine != nil {
+		edges = append(edges, section.EdgeRelatedMagazine)
+	}
 	return edges
 }
 
 // AddedIDs returns all ids (to other nodes) that were added for
 // the given edge name.
 func (m *SectionMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case section.EdgeRelatedMagazine:
+		if id := m.relatedMagazine; id != nil {
+			return []ent.Value{*id}
+		}
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *SectionMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
 	return edges
 }
 
 // RemovedIDs returns all ids (to other nodes) that were removed for
 // the given edge name.
 func (m *SectionMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *SectionMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedrelatedMagazine {
+		edges = append(edges, section.EdgeRelatedMagazine)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean indicates if this edge was
 // cleared in this mutation.
 func (m *SectionMutation) EdgeCleared(name string) bool {
+	switch name {
+	case section.EdgeRelatedMagazine:
+		return m.clearedrelatedMagazine
+	}
 	return false
 }
 
 // ClearEdge clears the value for the given name. It returns an
 // error if the edge name is not defined in the schema.
 func (m *SectionMutation) ClearEdge(name string) error {
+	switch name {
+	case section.EdgeRelatedMagazine:
+		m.ClearRelatedMagazine()
+		return nil
+	}
 	return fmt.Errorf("unknown Section unique edge %s", name)
 }
 
@@ -2352,5 +2416,10 @@ func (m *SectionMutation) ClearEdge(name string) error {
 // given edge name. It returns an error if the edge is not
 // defined in the schema.
 func (m *SectionMutation) ResetEdge(name string) error {
+	switch name {
+	case section.EdgeRelatedMagazine:
+		m.ResetRelatedMagazine()
+		return nil
+	}
 	return fmt.Errorf("unknown Section edge %s", name)
 }
