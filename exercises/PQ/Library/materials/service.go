@@ -51,6 +51,7 @@ func NewService(r Repository, logger log.Logger) Service {
 // Materials
 
 func (s service) GetMaterials(ctx context.Context) ([]Material, error) {
+
 	dtoResults, err := s.repository.GetMaterials(ctx)
 	if err != nil {
 		return nil, err
@@ -95,6 +96,16 @@ func (s service) GetBookByCode(ctx context.Context, uniqueCode string) (Book, er
 }
 
 func (s service) AddBook(ctx context.Context, book Book) (Book, error) {
+
+	loggedUser, err := FromContext(ctx)
+	if err != nil {
+		return Book{}, err
+	}
+
+	if loggedUser.Role == RoleUserAdmin {
+
+	}
+
 	var dtoResult DTOBook
 
 	dtoBook, err := s.bookToDto(book)
