@@ -2,6 +2,7 @@ package materials
 
 import (
 	"context"
+	"excercise-library/shared"
 	"time"
 )
 
@@ -134,105 +135,105 @@ func NewRepositoryMock() Repository {
 
 func (r repositoryMock) GetMaterials(ctx context.Context) ([]DTOMaterial, error) {
 	if ctx.Value("GetMaterialsError") == true {
-		return nil, ErrDefault
+		return nil, shared.ErrDefault
 	}
 	return MockMaterials, nil
 }
 
 func (r repositoryMock) GetMaterialByCode(ctx context.Context, _ string) (DTOMaterial, error) {
 	if ctx.Value("GetMaterialByCodeError") == true {
-		return DTOMaterial{}, ErrDefault
+		return DTOMaterial{}, shared.ErrDefault
 	}
 	return MockMaterials[0], nil
 }
 
 func (r repositoryMock) DeleteMaterial(ctx context.Context, _ string) error {
 	if ctx.Value("DeleteMaterialError") == true {
-		return ErrDefault
+		return shared.ErrDefault
 	}
 	return nil
 }
 
 func (r repositoryMock) GetBooks(ctx context.Context) ([]DTOBook, error) {
 	if ctx.Value("GetBooksError") == true {
-		return nil, ErrDefault
+		return nil, shared.ErrDefault
 	}
 	return MockBooks, nil
 }
 
 func (r repositoryMock) GetBookByCode(ctx context.Context, _ string) (DTOBook, error) {
 	if ctx.Value("GetBookByCodeError") == true {
-		return DTOBook{}, ErrDefault
+		return DTOBook{}, shared.ErrDefault
 	}
 	return MockBooks[0], nil
 }
 
 func (r repositoryMock) AddBook(ctx context.Context, _ DTOBook) (DTOBook, error) {
 	if ctx.Value("AddBookError") == true {
-		return DTOBook{}, ErrDefault
+		return DTOBook{}, shared.ErrDefault
 	}
 	return MockBooks[0], nil
 }
 
 func (r repositoryMock) UpdateBook(ctx context.Context, _ string, _ DTOBook) (DTOBook, error) {
 	if ctx.Value("UpdateBookError") == true {
-		return DTOBook{}, ErrDefault
+		return DTOBook{}, shared.ErrDefault
 	}
 	return MockBooks[0], nil
 }
 
 func (r repositoryMock) GetNewspapers(ctx context.Context) ([]DTONewspaper, error) {
 	if ctx.Value("GetNewspapersError") == true {
-		return nil, ErrDefault
+		return nil, shared.ErrDefault
 	}
 	return MockNewspapers, nil
 }
 
 func (r repositoryMock) GetNewspaperByCode(ctx context.Context, _ string) (DTONewspaper, error) {
 	if ctx.Value("GetNewspaperByCodeError") == true {
-		return DTONewspaper{}, ErrDefault
+		return DTONewspaper{}, shared.ErrDefault
 	}
 	return MockNewspapers[0], nil
 }
 
 func (r repositoryMock) AddNewspaper(ctx context.Context, _ DTONewspaper) (DTONewspaper, error) {
 	if ctx.Value("AddNewspaperError") == true {
-		return DTONewspaper{}, ErrDefault
+		return DTONewspaper{}, shared.ErrDefault
 	}
 	return MockNewspapers[0], nil
 }
 
 func (r repositoryMock) UpdateNewspaper(ctx context.Context, _ string, _ DTONewspaper) (DTONewspaper, error) {
 	if ctx.Value("UpdateNewspaperError") == true {
-		return DTONewspaper{}, ErrDefault
+		return DTONewspaper{}, shared.ErrDefault
 	}
 	return MockNewspapers[0], nil
 }
 
 func (r repositoryMock) GetMagazines(ctx context.Context) ([]DTOMagazine, error) {
 	if ctx.Value("GetMagazinesError") == true {
-		return nil, ErrDefault
+		return nil, shared.ErrDefault
 	}
 	return MockMagazines, nil
 }
 
 func (r repositoryMock) GetMagazineByCode(ctx context.Context, _ string) (DTOMagazine, error) {
 	if ctx.Value("GetMagazineByCodeError") == true {
-		return DTOMagazine{}, ErrDefault
+		return DTOMagazine{}, shared.ErrDefault
 	}
 	return MockMagazines[0], nil
 }
 
 func (r repositoryMock) AddMagazine(ctx context.Context, _ DTOMagazine) (DTOMagazine, error) {
 	if ctx.Value("AddMagazineError") == true {
-		return DTOMagazine{}, ErrDefault
+		return DTOMagazine{}, shared.ErrDefault
 	}
 	return MockMagazines[0], nil
 }
 
 func (r repositoryMock) UpdateMagazine(ctx context.Context, _ string, _ DTOMagazine) (DTOMagazine, error) {
 	if ctx.Value("UpdateMagazineError") == true {
-		return DTOMagazine{}, ErrDefault
+		return DTOMagazine{}, shared.ErrDefault
 	}
 	return MockMagazines[0], nil
 }

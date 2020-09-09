@@ -2,6 +2,7 @@ package materials
 
 import (
 	"context"
+	"excercise-library/shared"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-kit/kit/endpoint"
@@ -76,7 +77,7 @@ func newAuthMiddleware(name string) endpoint.Middleware {
 		return func(ctx context.Context, request interface{}) (interface{}, error) {
 			token, ok := ctx.Value(JWTTokenContextKey).(string)
 			if !ok {
-				return nil, ErrTokenInvalid
+				return nil, shared.ErrTokenInvalid
 			}
 
 			ai, err := GetAuthInfoFromJwtToken(token)
@@ -86,7 +87,7 @@ func newAuthMiddleware(name string) endpoint.Middleware {
 
 			// user service get User
 			if !AccessControl(name, ai.Role) {
-				return nil, ErrInvalidAccess
+				return nil, shared.ErrInvalidAccess
 			}
 
 			ctx = ToContext(ctx, User{
@@ -112,19 +113,19 @@ func InsertJwtIntoContext() kitTransport.RequestFunc {
 func GetAuthInfoFromJwtToken(jwtToken string) (AuthInfo, error) {
 	token, _, err := new(jwt.Parser).ParseUnverified(jwtToken, jwt.MapClaims{})
 	if err != nil {
-		return AuthInfo{}, ErrTokenInvalid
+		return AuthInfo{}, shared.ErrTokenInvalid
 	}
 
 	claims := token.Claims.(jwt.MapClaims)
 
 	roleStr, ok := claims["userRole"]
 	if !ok {
-		return AuthInfo{}, ErrTokenInvalid
+		return AuthInfo{}, shared.ErrTokenInvalid
 	}
 
 	userId, ok := claims["userId"]
 	if !ok {
-		return AuthInfo{}, ErrTokenInvalid
+		return AuthInfo{}, shared.ErrTokenInvalid
 	}
 
 	var role interface{}
@@ -149,7 +150,7 @@ func ToContext(ctx context.Context, val interface{}) context.Context {
 func FromContext(ctx context.Context) (User, error) {
 	usr, ok := ctx.Value(CtxKey).(User)
 	if !ok {
-		return User{}, ErrTokenInvalid
+		return User{}, shared.ErrTokenInvalid
 	}
 	return usr, nil
 }
