@@ -1,9 +1,9 @@
 package database
 
 import (
+	"excercise-library/config"
+	"excercise-library/ent"
 	"fmt"
-	"go-kit-template/config"
-	"go-kit-template/ent"
 )
 
 func Connect(configObj config.Config) (*ent.Client, error) {
@@ -21,5 +21,6 @@ func ConnectionString(dbConfig config.Database) string {
 		dbConfig.DB_PASS,
 		dbConfig.DB_HOST,
 		dbConfig.DB_PORT,
-		dbConfig.DB_NAME)
+		dbConfig.DB_NAME,
+	)
 }

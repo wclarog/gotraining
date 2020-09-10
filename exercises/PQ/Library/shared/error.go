@@ -15,6 +15,8 @@ var (
 	ErrDefault       = errors.New("default error")
 	ErrInvalidAccess = errors.New("invalid access")
 	ErrTokenInvalid  = errors.New(" invalid token")
+	ErrDatabase      = errors.New("db error")
+	ErrDatabaseTx    = errors.New("db transaction error")
 )
 
 type InternalCode int

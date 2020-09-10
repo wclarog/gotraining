@@ -3,10 +3,14 @@ package materials
 import (
 	"context"
 	"errors"
+	"excercise-library/database"
+	"excercise-library/shared"
 	"github.com/go-kit/kit/log"
 )
 
 type Service interface {
+	database.Transaction
+
 	GetMaterials(ctx context.Context) ([]Material, error)
 	GetMaterialByCode(ctx context.Context, uniqueCode string) (Material, error)
 	DeleteMaterial(ctx context.Context, uniqueCode string) error
@@ -46,6 +50,30 @@ func NewService(r Repository, logger log.Logger) Service {
 		repository: r,
 		logger:     logger,
 	}
+}
+
+func (s service) StartTx(ctx context.Context) (context.Context, error) {
+	ctx, err := s.repository.StartTx(ctx)
+	if err != nil {
+		err = shared.NewApiError(shared.ErrDatabase.Error(), shared.Internal, "StartTx", shared.ServiceLevel, err)
+	}
+	return ctx, err
+}
+
+func (s service) Commit(ctx context.Context) error {
+	err := s.repository.Commit(ctx)
+	if err != nil {
+		err = shared.NewApiError(shared.ErrDatabase.Error(), shared.Internal, "Commit", shared.ServiceLevel, err)
+	}
+	return err
+}
+
+func (s service) Rollback(ctx context.Context) error {
+	err := s.repository.Rollback(ctx)
+	if err != nil {
+		err = shared.NewApiError(shared.ErrDatabase.Error(), shared.Internal, "Rollback", shared.ServiceLevel, err)
+	}
+	return err
 }
 
 // Materials

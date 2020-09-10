@@ -13,6 +13,7 @@ type Config struct {
 }
 
 type Database struct {
+	DB_TYPE string
 	DB_USER string
 	DB_PASS string
 	DB_HOST string

@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"excercise-library/config"
-	"excercise-library/ent"
+	"excercise-library/database"
 	"excercise-library/materials"
 	"flag"
 	"fmt"
@@ -34,15 +34,19 @@ func main() {
 
 	ctx := context.Background()
 
-	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",
-		config.DB.DB_USER,
-		config.DB.DB_PASS,
-		config.DB.DB_HOST,
-		config.DB.DB_PORT,
-		config.DB.DB_NAME)
+	/*
+		connectionString := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",
+			config.DB.DB_USER,
+			config.DB.DB_PASS,
+			config.DB.DB_HOST,
+			config.DB.DB_PORT,
+			config.DB.DB_NAME)
 
-	client, errOpen := ent.Open("mysql", connectionString)
-	if errOpen != nil {
+		client, errOpen := ent.Open("mysql", connectionString)
+	*/
+
+	client, err := database.Connect(config.Values)
+	if err != nil {
 		panic("database connection failed")
 	}
 	defer client.Close()
@@ -51,6 +55,7 @@ func main() {
 	srv := materials.NewService(repository, logger)
 	endpoints := materials.MakeEndpoints(srv)
 	endpoints = materials.NewAuthMiddleware(endpoints)
+	endpoints = materials.NewTXMiddleware(srv, endpoints)
 
 	errs := make(chan error)
 

@@ -3,6 +3,7 @@ package materials
 import (
 	"context"
 	"errors"
+	"excercise-library/database"
 	"excercise-library/ent"
 	book2 "excercise-library/ent/book"
 	magazine2 "excercise-library/ent/magazine"
@@ -15,6 +16,8 @@ import (
 )
 
 type Repository interface {
+	database.RepositoryTx
+
 	GetMaterials(ctx context.Context) ([]DTOMaterial, error)
 	GetMaterialByCode(ctx context.Context, uniqueCode string) (DTOMaterial, error)
 	DeleteMaterial(ctx context.Context, uniqueCode string) error
@@ -36,18 +39,18 @@ type Repository interface {
 }
 
 type repository struct {
-	client *ent.Client
+	database.RepositoryTxImpl
 }
 
 func NewRepository(client *ent.Client) Repository {
 	return &repository{
-		client: client,
+		database.RepositoryTxImpl{Client: client},
 	}
 }
 
 // Materials
 func (r repository) GetMaterials(ctx context.Context) ([]DTOMaterial, error) {
-	repoMaterials, err := r.client.
+	repoMaterials, err := r.Client.
 		Material.
 		Query().
 		All(ctx)
@@ -66,7 +69,7 @@ func (r repository) GetMaterials(ctx context.Context) ([]DTOMaterial, error) {
 }
 
 func (r repository) GetMaterialByCode(ctx context.Context, uniqueCode string) (DTOMaterial, error) {
-	repoMaterial, err := r.client.
+	repoMaterial, err := r.Client.
 		Material.
 		Query().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
@@ -86,7 +89,7 @@ func (r repository) GetMaterialByCode(ctx context.Context, uniqueCode string) (D
 }
 
 func (r repository) DeleteMaterial(ctx context.Context, uniqueCode string) error {
-	_, err := r.client.
+	_, err := r.Client.
 		Material.
 		Delete().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
@@ -101,7 +104,7 @@ func (r repository) DeleteMaterial(ctx context.Context, uniqueCode string) error
 // Books
 
 func (r repository) GetBooks(ctx context.Context) ([]DTOBook, error) {
-	repoBooks, err := r.client.
+	repoBooks, err := r.Client.
 		Material.
 		Query().
 		Where(material2.MaterialTypeEQ(int(BookType))).
@@ -123,7 +126,7 @@ func (r repository) GetBooks(ctx context.Context) ([]DTOBook, error) {
 }
 
 func (r repository) GetBookByCode(ctx context.Context, uniqueCode string) (DTOBook, error) {
-	repoBook, err := r.client.
+	repoBook, err := r.Client.
 		Material.
 		Query().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
@@ -146,13 +149,7 @@ func (r repository) GetBookByCode(ctx context.Context, uniqueCode string) (DTOBo
 }
 
 func (r repository) AddBook(ctx context.Context, book DTOBook) (DTOBook, error) {
-	tx, err := r.client.Tx(ctx)
-	if err != nil {
-		return DTOBook{}, fmt.Errorf("starting a transaction: %v", err)
-	}
-
-	var repoMaterial *ent.Material
-	repoMaterial, err = tx.
+	repoMaterial, err := r.Client.
 		Material.
 		Create().
 		SetUniqueCode(book.UniqueCode).
@@ -162,10 +159,10 @@ func (r repository) AddBook(ctx context.Context, book DTOBook) (DTOBook, error) 
 		SetMaterialType(int(book.MaterialType)).
 		Save(ctx)
 	if err != nil {
-		return DTOBook{}, rollback(tx, fmt.Errorf("failed adding book (material): %v", err))
+		return DTOBook{}, fmt.Errorf("failed adding book (material): %v", err)
 	}
 
-	_, err = tx.
+	_, err = r.Client.
 		Book.
 		Create().
 		SetAuthorName(book.AuthorName).
@@ -173,12 +170,7 @@ func (r repository) AddBook(ctx context.Context, book DTOBook) (DTOBook, error) 
 		SetRelatedMaterialID(repoMaterial.ID).
 		Save(ctx)
 	if err != nil {
-		return DTOBook{}, rollback(tx, fmt.Errorf("failed adding book (book): %v", err))
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return DTOBook{}, err
+		return DTOBook{}, fmt.Errorf("failed adding book (book): %v", err)
 	}
 
 	log.Println("book saved")
@@ -187,13 +179,7 @@ func (r repository) AddBook(ctx context.Context, book DTOBook) (DTOBook, error) 
 }
 
 func (r repository) UpdateBook(ctx context.Context, uniqueCode string, book DTOBook) (DTOBook, error) {
-	tx, err := r.client.Tx(ctx)
-	if err != nil {
-		return DTOBook{}, fmt.Errorf("starting a transaction: %v", err)
-	}
-
-	//var updatedCount int
-	_, err = tx.
+	_, err := r.Client.
 		Material.
 		Update().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
@@ -204,10 +190,10 @@ func (r repository) UpdateBook(ctx context.Context, uniqueCode string, book DTOB
 		SetMaterialType(int(book.MaterialType)).
 		Save(ctx)
 	if err != nil {
-		return DTOBook{}, rollback(tx, fmt.Errorf("failed updating book (material): %v", err))
+		return DTOBook{}, fmt.Errorf("failed updating book (material): %v", err)
 	}
 
-	_, err = tx.
+	_, err = r.Client.
 		Book.
 		Update().
 		Where(book2.HasRelatedMaterialWith(material2.UniqueCodeEQ(uniqueCode))).
@@ -215,12 +201,7 @@ func (r repository) UpdateBook(ctx context.Context, uniqueCode string, book DTOB
 		SetGenre(book.Genre).
 		Save(ctx)
 	if err != nil {
-		return DTOBook{}, rollback(tx, fmt.Errorf("failed updating book (book): %v", err))
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return DTOBook{}, err
+		return DTOBook{}, fmt.Errorf("failed updating book (book): %v", err)
 	}
 
 	log.Println("book updated")
@@ -231,7 +212,7 @@ func (r repository) UpdateBook(ctx context.Context, uniqueCode string, book DTOB
 // Newspapers
 
 func (r repository) GetNewspapers(ctx context.Context) ([]DTONewspaper, error) {
-	repoNewspapers, err := r.client.
+	repoNewspapers, err := r.Client.
 		Material.
 		Query().
 		Where(material2.MaterialTypeEQ(int(NewspaperType))).
@@ -253,7 +234,7 @@ func (r repository) GetNewspapers(ctx context.Context) ([]DTONewspaper, error) {
 }
 
 func (r repository) GetNewspaperByCode(ctx context.Context, uniqueCode string) (DTONewspaper, error) {
-	repoNewspaper, err := r.client.
+	repoNewspaper, err := r.Client.
 		Material.
 		Query().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
@@ -276,13 +257,7 @@ func (r repository) GetNewspaperByCode(ctx context.Context, uniqueCode string) (
 }
 
 func (r repository) AddNewspaper(ctx context.Context, newspaper DTONewspaper) (DTONewspaper, error) {
-	tx, err := r.client.Tx(ctx)
-	if err != nil {
-		return DTONewspaper{}, fmt.Errorf("starting a transaction: %v", err)
-	}
-
-	var repoMaterial *ent.Material
-	repoMaterial, err = tx.
+	repoMaterial, err := r.Client.
 		Material.
 		Create().
 		SetUniqueCode(newspaper.UniqueCode).
@@ -292,22 +267,17 @@ func (r repository) AddNewspaper(ctx context.Context, newspaper DTONewspaper) (D
 		SetMaterialType(int(newspaper.MaterialType)).
 		Save(ctx)
 	if err != nil {
-		return DTONewspaper{}, rollback(tx, fmt.Errorf("failed adding newspaper (material): %v", err))
+		return DTONewspaper{}, fmt.Errorf("failed adding newspaper (material): %v", err)
 	}
 
-	_, err = tx.
+	_, err = r.Client.
 		Newspaper.
 		Create().
 		SetURL(newspaper.Url).
 		SetRelatedMaterialID(repoMaterial.ID).
 		Save(ctx)
 	if err != nil {
-		return DTONewspaper{}, rollback(tx, fmt.Errorf("failed adding newspaper (newspaper): %v", err))
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return DTONewspaper{}, err
+		return DTONewspaper{}, fmt.Errorf("failed adding newspaper (newspaper): %v", err)
 	}
 
 	log.Println("newspaper saved")
@@ -316,13 +286,7 @@ func (r repository) AddNewspaper(ctx context.Context, newspaper DTONewspaper) (D
 }
 
 func (r repository) UpdateNewspaper(ctx context.Context, uniqueCode string, newspaper DTONewspaper) (DTONewspaper, error) {
-	tx, err := r.client.Tx(ctx)
-	if err != nil {
-		return DTONewspaper{}, fmt.Errorf("starting a transaction: %v", err)
-	}
-
-	//var updatedCount int
-	_, err = tx.
+	_, err := r.Client.
 		Material.
 		Update().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
@@ -333,22 +297,17 @@ func (r repository) UpdateNewspaper(ctx context.Context, uniqueCode string, news
 		SetMaterialType(int(newspaper.MaterialType)).
 		Save(ctx)
 	if err != nil {
-		return DTONewspaper{}, rollback(tx, fmt.Errorf("failed updating newspaper (material): %v", err))
+		return DTONewspaper{}, fmt.Errorf("failed updating newspaper (material): %v", err)
 	}
 
-	_, err = tx.
+	_, err = r.Client.
 		Newspaper.
 		Update().
 		Where(newspaper2.HasRelatedMaterialWith(material2.UniqueCodeEQ(uniqueCode))).
 		SetURL(newspaper.Url).
 		Save(ctx)
 	if err != nil {
-		return DTONewspaper{}, rollback(tx, fmt.Errorf("failed updating newspaper (newspaper): %v", err))
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return DTONewspaper{}, err
+		return DTONewspaper{}, fmt.Errorf("failed updating newspaper (newspaper): %v", err)
 	}
 
 	log.Println("newspaper updated")
@@ -359,7 +318,7 @@ func (r repository) UpdateNewspaper(ctx context.Context, uniqueCode string, news
 // Magazines
 
 func (r repository) GetMagazines(ctx context.Context) ([]DTOMagazine, error) {
-	repoMagazines, err := r.client.
+	repoMagazines, err := r.Client.
 		Material.
 		Query().
 		Where(material2.MaterialTypeEQ(int(MagazineType))).
@@ -398,7 +357,7 @@ func (r repository) GetMagazineByCode(ctx context.Context, uniqueCode string) (D
 }
 
 func (r repository) getRepoMagazineByCode(ctx context.Context, uniqueCode string) (*ent.Material, error) {
-	repoMagazine, err := r.client.
+	repoMagazine, err := r.Client.
 		Material.
 		Query().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
@@ -413,13 +372,7 @@ func (r repository) getRepoMagazineByCode(ctx context.Context, uniqueCode string
 }
 
 func (r repository) AddMagazine(ctx context.Context, magazine DTOMagazine) (DTOMagazine, error) {
-	tx, err := r.client.Tx(ctx)
-	if err != nil {
-		return DTOMagazine{}, fmt.Errorf("starting a transaction: %v", err)
-	}
-
-	var repoMaterial *ent.Material
-	repoMaterial, err = tx.
+	repoMaterial, err := r.Client.
 		Material.
 		Create().
 		SetUniqueCode(magazine.UniqueCode).
@@ -429,22 +382,22 @@ func (r repository) AddMagazine(ctx context.Context, magazine DTOMagazine) (DTOM
 		SetMaterialType(int(magazine.MaterialType)).
 		Save(ctx)
 	if err != nil {
-		return DTOMagazine{}, rollback(tx, fmt.Errorf("failed adding magazine (material): %v", err))
+		return DTOMagazine{}, fmt.Errorf("failed adding magazine (material): %v", err)
 	}
 
 	var repoMagazine *ent.Magazine
-	repoMagazine, err = tx.
+	repoMagazine, err = r.Client.
 		Magazine.
 		Create().
 		SetURL(magazine.Url).
 		SetRelatedMaterialID(repoMaterial.ID).
 		Save(ctx)
 	if err != nil {
-		return DTOMagazine{}, rollback(tx, fmt.Errorf("failed adding magazine (magazine): %v", err))
+		return DTOMagazine{}, fmt.Errorf("failed adding magazine (magazine): %v", err)
 	}
 
 	for _, s := range magazine.Sections {
-		_, err = tx.
+		_, err = r.Client.
 			Section.
 			Create().
 			SetCode(s.Code).
@@ -452,13 +405,8 @@ func (r repository) AddMagazine(ctx context.Context, magazine DTOMagazine) (DTOM
 			SetRelatedMagazineID(repoMagazine.ID).
 			Save(ctx)
 		if err != nil {
-			return DTOMagazine{}, rollback(tx, fmt.Errorf("failed adding magazine (section): %v", err))
+			return DTOMagazine{}, fmt.Errorf("failed adding magazine (section): %v", err)
 		}
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return DTOMagazine{}, err
 	}
 
 	log.Println("magazine saved")
@@ -473,13 +421,13 @@ func (r repository) UpdateMagazine(ctx context.Context, uniqueCode string, magaz
 	}
 
 	var tx *ent.Tx
-	tx, err = r.client.Tx(ctx)
+	tx, err = r.Client.Tx(ctx)
 	if err != nil {
 		return DTOMagazine{}, fmt.Errorf("starting a transaction: %v", err)
 	}
 
 	//var updatedCount int
-	_, err = tx.
+	_, err = r.Client.
 		Material.
 		Update().
 		Where(material2.UniqueCodeEQ(uniqueCode)).
@@ -493,7 +441,7 @@ func (r repository) UpdateMagazine(ctx context.Context, uniqueCode string, magaz
 		return DTOMagazine{}, rollback(tx, fmt.Errorf("failed updating magazine (material): %v", err))
 	}
 
-	_, err = tx.
+	_, err = r.Client.
 		Magazine.
 		Update().
 		Where(magazine2.HasRelatedMaterialWith(material2.UniqueCodeEQ(uniqueCode))).
@@ -503,7 +451,7 @@ func (r repository) UpdateMagazine(ctx context.Context, uniqueCode string, magaz
 		return DTOMagazine{}, rollback(tx, fmt.Errorf("failed updating magazine (magazine): %v", err))
 	}
 
-	_, err = tx.
+	_, err = r.Client.
 		Section.
 		Delete().
 		Where(section2.HasRelatedMagazineWith(magazine2.HasRelatedMaterialWith(material2.UniqueCodeEQ(uniqueCode)))).

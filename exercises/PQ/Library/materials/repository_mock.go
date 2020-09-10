@@ -2,6 +2,7 @@ package materials
 
 import (
 	"context"
+	"excercise-library/ent"
 	"excercise-library/shared"
 	"time"
 )
@@ -131,6 +132,34 @@ type repositoryMock struct {
 
 func NewRepositoryMock() Repository {
 	return repositoryMock{}
+}
+
+func (r repositoryMock) GetClient(ctx context.Context) *ent.Client {
+	if ctx.Value("GetClientError") == true {
+		return nil
+	}
+	return nil
+}
+
+func (r repositoryMock) StartTx(ctx context.Context) (context.Context, error) {
+	if ctx.Value("StartTxError") == true {
+		return nil, shared.ErrDefault
+	}
+	return ctx, nil
+}
+
+func (r repositoryMock) Commit(ctx context.Context) error {
+	if ctx.Value("CommitError") == true {
+		return shared.ErrDefault
+	}
+	return nil
+}
+
+func (r repositoryMock) Rollback(ctx context.Context) error {
+	if ctx.Value("RollbackError") == true {
+		return shared.ErrDefault
+	}
+	return nil
 }
 
 func (r repositoryMock) GetMaterials(ctx context.Context) ([]DTOMaterial, error) {
