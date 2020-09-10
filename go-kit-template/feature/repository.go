@@ -2,21 +2,23 @@ package feature
 
 import (
 	"context"
-	"database/sql"
+	"go-kit-template/database"
+	"go-kit-template/ent"
 )
 
 type Repository interface {
 	Method(ctx context.Context) (string, error)
 	NewMethod(ctx context.Context) (DTOFeature, error)
+	database.RepositoryTx
 }
 
 type repository struct {
-	db *sql.DB
+	database.RepositoryTxImpl
 }
 
-func NewRepository(db *sql.DB) Repository {
+func NewRepository(client *ent.Client) Repository {
 	return &repository{
-		db: db,
+		database.RepositoryTxImpl{Client: client},
 	}
 }
 

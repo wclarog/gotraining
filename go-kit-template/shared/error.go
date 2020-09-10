@@ -12,6 +12,8 @@ type ErrorResponse struct {
 
 var (
 	ErrJSONInvalid = errors.New("json invalid")
+	ErrDatabase    = errors.New("db error")
+	ErrDatabaseTx  = errors.New("db transaction error")
 )
 
 type InternalCode int

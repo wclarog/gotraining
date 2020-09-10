@@ -13,6 +13,7 @@ type Config struct {
 }
 
 type Database struct {
+	DB_TYPE string
 	DB_USER string
 	DB_PASS string
 	DB_HOST string
@@ -22,7 +23,7 @@ type Database struct {
 
 var (
 	Values Config
-	DB     Database
+	db     Database
 )
 
 func init() {
@@ -43,9 +44,9 @@ func init() {
 	if err := viper.ReadInConfig(); err != nil {
 		fmt.Printf("Error reading config file, %s", err)
 	}
-	err := viper.Unmarshal(&DB)
+	err := viper.Unmarshal(&db)
 	fmt.Println("db")
-	fmt.Println(DB)
+	fmt.Println(db)
 	if err != nil {
 		fmt.Printf("Unable to decode into struct, %v", err)
 	}
@@ -53,5 +54,5 @@ func init() {
 	if err != nil {
 		fmt.Printf("Unable to decode into struct, %v", err)
 	}
-	Values.DB = DB
+	Values.DB = db
 }

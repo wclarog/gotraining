@@ -2,20 +2,20 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"flag"
 	"fmt"
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
-	httptransport "github.com/go-kit/kit/transport/http"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/golang-sql/sqlexp"
 	"go-kit-template/config"
+	"go-kit-template/database"
 	"go-kit-template/feature"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
+	httptransport "github.com/go-kit/kit/transport/http"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 func main() {
@@ -35,11 +35,20 @@ func main() {
 	}()
 
 	ctx := context.Background()
-	db, _ := sql.Open(sqlexp.DialectMySQL, config.Values.DB.DB_HOST)
 
-	repository := feature.NewRepository(db)
+	client, err := database.Connect(config.Values)
+	defer func() {
+		_ = client.Close()
+	}()
+
+	if err != nil {
+		panic(err)
+	}
+
+	repository := feature.NewRepository(client)
 	srv := feature.NewService(repository, logger)
 	endpoints := feature.MakeEndpoints(srv)
+	endpoints = feature.NewTXMiddleware(srv, endpoints)
 
 	errs := make(chan error)
 
