@@ -1,11 +1,10 @@
 version: '3'
 
 services:
-
   mysql-development:
     image: mysql:latest
     environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: template
+      - MYSQL_ROOT_PASSWORD=RooT27134668
+      - MYSQL_DATABASE=dev_library
     ports:
-      - "3306:3306"
+      - 3306:3306

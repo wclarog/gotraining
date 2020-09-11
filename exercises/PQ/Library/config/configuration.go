@@ -13,6 +13,7 @@ type Config struct {
 }
 
 type Database struct {
+	DB_TYPE string
 	DB_USER string
 	DB_PASS string
 	DB_HOST string
@@ -35,6 +36,7 @@ func init() {
 	// Config path
 	viper.AddConfigPath("./config")
 	// If values are loaded from env vars only set defaults
+	viper.SetDefault("DB_TYPE", "")
 	viper.SetDefault("DB_USER", "")
 	viper.SetDefault("DB_PASS", "")
 	viper.SetDefault("DB_HOST", "")

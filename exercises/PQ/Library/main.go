@@ -2,16 +2,15 @@ package main
 
 import (
 	"context"
-	"database/sql"
+	"excercise-library/config"
+	"excercise-library/database"
+	"excercise-library/materials"
 	"flag"
 	"fmt"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	httptransport "github.com/go-kit/kit/transport/http"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/golang-sql/sqlexp"
-	"go-kit-template/config"
-	"go-kit-template/library"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,7 +18,6 @@ import (
 )
 
 func main() {
-
 	httpAddr := flag.String("http", ":"+config.Values.HTTP_PORT, "http listen address")
 
 	logger := log.NewLogfmtLogger(os.Stderr)
@@ -35,12 +33,29 @@ func main() {
 	}()
 
 	ctx := context.Background()
-	db, _ := sql.Open(sqlexp.DialectMySQL, config.Values.DB.DB_HOST)
 
-	repository := library.NewRepository(db)
-	srv := library.NewService(repository, logger)
-	endpoints := library.MakeEndpoints(srv)
-	endpoints = library.NewAuthMiddleware(endpoints)
+	/*
+		connectionString := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",
+			config.DB.DB_USER,
+			config.DB.DB_PASS,
+			config.DB.DB_HOST,
+			config.DB.DB_PORT,
+			config.DB.DB_NAME)
+
+		client, errOpen := ent.Open("mysql", connectionString)
+	*/
+
+	client, err := database.Connect(config.Values)
+	if err != nil {
+		panic("database connection failed")
+	}
+	defer client.Close()
+
+	repository := materials.NewRepository(client)
+	srv := materials.NewService(repository, logger)
+	endpoints := materials.MakeEndpoints(srv)
+	endpoints = materials.NewAuthMiddleware(endpoints)
+	endpoints = materials.NewTXMiddleware(srv, endpoints)
 
 	errs := make(chan error)
 
@@ -53,7 +68,7 @@ func main() {
 	go func() {
 		_ = logger.Log("listening on port", *httpAddr)
 		var serverOptions []httptransport.ServerOption
-		handler := library.NewHandler(ctx, serverOptions, endpoints)
+		handler := materials.NewHandler(ctx, serverOptions, endpoints)
 		errs <- http.ListenAndServe(*httpAddr, handler)
 	}()
 
